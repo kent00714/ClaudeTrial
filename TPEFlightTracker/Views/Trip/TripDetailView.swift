@@ -12,6 +12,7 @@ struct TripDetailView: View {
     @State private var showingFlightDetail = false
     @State private var mapCameraPosition: MapCameraPosition = .automatic
     @State private var showingTaxiBooking: (from: TripDestination, to: TripDestination)?
+    @State private var showingHotelSearch: TripDestination?
 
     init(trip: Trip, viewModel: TripViewModel, flightViewModel: FlightViewModel = FlightViewModel()) {
         self.trip = trip
@@ -276,6 +277,9 @@ struct TripDetailView: View {
                             if let prev = previousDestination {
                                 showingTaxiBooking = (from: prev, to: destination)
                             }
+                        },
+                        onFindHotels: {
+                            showingHotelSearch = destination
                         }
                     )
                     .contentShape(Rectangle())
@@ -309,6 +313,12 @@ struct TripDetailView: View {
                 taxiViewModel: taxiViewModel
             )
         }
+        .sheet(item: $showingHotelSearch) { destination in
+            HotelSearchNearView(
+                coordinate: destination.coordinate,
+                locationName: destination.name
+            )
+        }
     }
 }
 
@@ -326,6 +336,7 @@ struct DestinationRowView: View {
     let isLast: Bool
     var showTaxiBooking: Bool = false
     var onBookTaxi: (() -> Void)?
+    var onFindHotels: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -457,20 +468,40 @@ struct DestinationRowView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                     }
 
-                    // Link button (ticket/website/map)
-                    if let url = destination.bestAvailableURL {
-                        Link(destination: url) {
+                    // Action buttons row
+                    HStack(spacing: 8) {
+                        // Link button (ticket/website/map)
+                        if let url = destination.bestAvailableURL {
+                            Link(destination: url) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: destination.primaryLinkIcon)
+                                    Text(destination.primaryLinkLabel)
+                                }
+                                .font(.caption2)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(destination.requiresTicket ? Color.green.opacity(0.15) : Color.blue.opacity(0.1))
+                                .foregroundStyle(destination.requiresTicket ? .green : .blue)
+                                .clipShape(Capsule())
+                            }
+                        }
+
+                        // Find Hotels button
+                        Button {
+                            onFindHotels?()
+                        } label: {
                             HStack(spacing: 4) {
-                                Image(systemName: destination.primaryLinkIcon)
-                                Text(destination.primaryLinkLabel)
+                                Image(systemName: "bed.double.fill")
+                                Text("Hotels")
                             }
                             .font(.caption2)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
-                            .background(destination.requiresTicket ? Color.green.opacity(0.15) : Color.blue.opacity(0.1))
-                            .foregroundStyle(destination.requiresTicket ? .green : .blue)
+                            .background(Color.purple.opacity(0.1))
+                            .foregroundStyle(.purple)
                             .clipShape(Capsule())
                         }
+                        .buttonStyle(.plain)
                     }
                 }
 

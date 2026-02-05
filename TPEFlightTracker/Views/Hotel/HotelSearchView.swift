@@ -1,212 +1,173 @@
 import SwiftUI
+import CoreLocation
 
 // MARK: - Hotel Search View
 
 struct HotelSearchView: View {
-    @StateObject private var viewModel = HotelSearchViewModel()
-    @State private var showingFilters = false
+    @State private var searchText = ""
+    @State private var sortBy: HotelSortOption = .rating
+    @State private var results: [HotelSearchResult] = []
+    @State private var selectedHotel: HotelSearchResult?
+
+    private let service = HotelSearchService.shared
+    private let areas = ["Taipei", "Jiufen", "Beitou", "Taroko", "Sun Moon Lake", "Kaohsiung", "Tainan"]
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Search Form
-                searchForm
+                // Search bar
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.secondary)
+                    TextField("Search area or hotel name", text: $searchText)
+                        .textFieldStyle(.plain)
+                        .onSubmit {
+                            search()
+                        }
+                    if !searchText.isEmpty {
+                        Button {
+                            searchText = ""
+                            results = []
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .padding()
 
-                // Results
-                if viewModel.isLoading {
-                    Spacer()
-                    ProgressView("Searching hotels...")
-                    Spacer()
-                } else if viewModel.hasSearched && viewModel.results.isEmpty {
+                if results.isEmpty && searchText.isEmpty {
+                    // Quick search buttons
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Popular Areas")
+                                .font(.headline)
+                                .padding(.horizontal)
+
+                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))], spacing: 12) {
+                                ForEach(areas, id: \.self) { area in
+                                    Button {
+                                        searchText = area
+                                        search()
+                                    } label: {
+                                        VStack(spacing: 8) {
+                                            Image(systemName: areaIcon(for: area))
+                                                .font(.title2)
+                                            Text(area)
+                                                .font(.caption)
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .background(Color(.systemGray6))
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.horizontal)
+
+                            Spacer()
+                        }
+                        .padding(.top)
+                    }
+                } else if results.isEmpty {
                     ContentUnavailableView {
                         Label("No Hotels Found", systemImage: "building.2")
                     } description: {
-                        Text("Try adjusting your search criteria or dates.")
+                        Text("Try searching for a different area")
                     }
-                } else if !viewModel.results.isEmpty {
-                    resultsList
                 } else {
-                    Spacer()
-                    VStack(spacing: 16) {
-                        Image(systemName: "bed.double.fill")
-                            .font(.system(size: 60))
-                            .foregroundStyle(.blue.opacity(0.5))
-                        Text("Search for hotels in Taiwan")
-                            .font(.headline)
+                    // Sort picker
+                    HStack {
+                        Text("\(results.count) hotels")
+                            .font(.subheadline)
                             .foregroundStyle(.secondary)
-                        Text("Compare prices from Booking.com, Agoda, Expedia and more")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
+                        Spacer()
+                        Menu {
+                            ForEach(HotelSortOption.allCases) { option in
+                                Button {
+                                    sortBy = option
+                                    search()
+                                } label: {
+                                    HStack {
+                                        Image(systemName: option.systemImage)
+                                        Text(option.displayName)
+                                        if sortBy == option {
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: sortBy.systemImage)
+                                Text(sortBy.displayName)
+                                Image(systemName: "chevron.down")
+                            }
+                            .font(.subheadline)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color(.systemGray6))
+                            .clipShape(Capsule())
+                        }
                     }
-                    Spacer()
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+
+                    // Results list
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(results) { result in
+                                HotelCard(result: result)
+                                    .onTapGesture {
+                                        selectedHotel = result
+                                    }
+                            }
+                        }
+                        .padding()
+                    }
                 }
             }
             .navigationTitle("Hotels")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingFilters = true
-                    } label: {
-                        Image(systemName: "slider.horizontal.3")
-                    }
-                }
-            }
-            .sheet(isPresented: $showingFilters) {
-                HotelFilterView(viewModel: viewModel)
+            .sheet(item: $selectedHotel) { result in
+                HotelDetailSheet(result: result)
             }
         }
     }
 
-    // MARK: - Search Form
-
-    private var searchForm: some View {
-        VStack(spacing: 12) {
-            // Location
-            HStack {
-                Image(systemName: "mappin.circle.fill")
-                    .foregroundStyle(.red)
-                TextField("City or destination", text: $viewModel.location)
-            }
-            .padding()
-            .background(Color(.systemGray6))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-
-            // Dates
-            HStack(spacing: 12) {
-                // Check-in
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Check-in")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    DatePicker("", selection: $viewModel.checkIn, in: Date()..., displayedComponents: .date)
-                        .labelsHidden()
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                // Check-out
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Check-out")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    DatePicker("", selection: $viewModel.checkOut, in: viewModel.checkIn..., displayedComponents: .date)
-                        .labelsHidden()
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-
-            // Guests and Rooms
-            HStack(spacing: 12) {
-                // Guests
-                HStack {
-                    Image(systemName: "person.2.fill")
-                        .foregroundStyle(.blue)
-                    Stepper("\(viewModel.guests) Guest\(viewModel.guests > 1 ? "s" : "")", value: $viewModel.guests, in: 1...10)
-                }
-                .padding()
-                .background(Color(.systemGray6))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-
-            // Search Button
-            Button {
-                Task {
-                    await viewModel.search()
-                }
-            } label: {
-                HStack {
-                    Image(systemName: "magnifyingglass")
-                    Text("Search Hotels")
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.blue)
-                .foregroundStyle(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-            .disabled(viewModel.location.isEmpty || viewModel.isLoading)
-        }
-        .padding()
-        .background(Color(.systemBackground))
+    private func search() {
+        results = service.searchHotels(in: searchText, sortBy: sortBy)
     }
 
-    // MARK: - Results List
-
-    private var resultsList: some View {
-        VStack(spacing: 0) {
-            // Results header
-            HStack {
-                Text("\(viewModel.results.count) hotels found")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer()
-
-                // Sort picker
-                Menu {
-                    ForEach(HotelSortOption.allCases) { option in
-                        Button {
-                            viewModel.sortBy = option
-                            Task { await viewModel.search() }
-                        } label: {
-                            HStack {
-                                Text(option.displayName)
-                                if viewModel.sortBy == option {
-                                    Image(systemName: "checkmark")
-                                }
-                            }
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text("Sort")
-                        Image(systemName: "arrow.up.arrow.down")
-                    }
-                    .font(.subheadline)
-                }
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-            .background(Color(.systemGroupedBackground))
-
-            // Hotel list
-            ScrollView {
-                LazyVStack(spacing: 12) {
-                    ForEach(viewModel.results) { result in
-                        NavigationLink {
-                            HotelDetailView(result: result, checkIn: viewModel.checkIn, checkOut: viewModel.checkOut)
-                        } label: {
-                            HotelResultCard(result: result, nights: viewModel.nights)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding()
-            }
+    private func areaIcon(for area: String) -> String {
+        switch area {
+        case "Taipei": return "building.2.fill"
+        case "Jiufen": return "mountain.2.fill"
+        case "Beitou": return "drop.fill"
+        case "Taroko": return "mountain.2.fill"
+        case "Sun Moon Lake": return "water.waves"
+        case "Kaohsiung": return "building.fill"
+        case "Tainan": return "building.columns.fill"
+        default: return "mappin.circle.fill"
         }
     }
 }
 
-// MARK: - Hotel Result Card
+// MARK: - Hotel Card
 
-struct HotelResultCard: View {
+struct HotelCard: View {
     let result: HotelSearchResult
-    let nights: Int
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Hotel info
-            HStack(alignment: .top, spacing: 12) {
-                // Placeholder image
+            HStack(alignment: .top) {
+                // Hotel icon placeholder
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.blue.opacity(0.2))
-                    .frame(width: 80, height: 80)
+                    .fill(Color.blue.opacity(0.15))
+                    .frame(width: 70, height: 70)
                     .overlay {
                         Image(systemName: "building.2.fill")
                             .font(.title2)
@@ -214,8 +175,8 @@ struct HotelResultCard: View {
                     }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    // Stars
-                    Text(result.hotel.starRatingDisplay)
+                    // Star rating
+                    Text(result.hotel.starDisplay)
                         .font(.caption)
                         .foregroundStyle(.orange)
 
@@ -225,17 +186,17 @@ struct HotelResultCard: View {
                         .lineLimit(1)
 
                     // Local name
-                    if let localName = result.hotel.nameLocal {
-                        Text(localName)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                    Text(result.hotel.nameLocal)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
 
                     // Location
                     HStack(spacing: 4) {
                         Image(systemName: "mappin")
-                        Text(result.hotel.neighborhood ?? result.hotel.address)
-                            .lineLimit(1)
+                        Text(result.hotel.neighborhood)
+                        if result.distanceKm > 0 {
+                            Text("• \(result.formattedDistance)")
+                        }
                     }
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -245,392 +206,323 @@ struct HotelResultCard: View {
 
                 // Rating
                 VStack(spacing: 2) {
-                    Text(result.hotel.formattedRating)
-                        .font(.title3.bold())
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(ratingColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    HStack(spacing: 2) {
+                        Image(systemName: "star.fill")
+                            .foregroundStyle(.orange)
+                        Text(result.hotel.formattedRating)
+                            .fontWeight(.bold)
+                    }
+                    .font(.subheadline)
 
-                    Text(result.hotel.ratingDescription)
+                    Text("\(result.hotel.reviewCount)")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
 
-                    Text("\(result.hotel.reviewCount) reviews")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                    Text(result.hotel.priceLevelDisplay)
+                        .font(.caption)
+                        .foregroundStyle(.green)
                 }
             }
 
             // Amenities
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(result.hotel.amenities.prefix(5)) { amenity in
-                        HStack(spacing: 4) {
-                            Image(systemName: amenity.systemImage)
-                            Text(amenity.displayName)
-                        }
-                        .font(.caption2)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color(.systemGray6))
-                        .clipShape(Capsule())
+                HStack(spacing: 6) {
+                    ForEach(result.hotel.amenities.prefix(4), id: \.self) { amenity in
+                        Text(amenity)
+                            .font(.caption2)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color(.systemGray6))
+                            .clipShape(Capsule())
+                    }
+                    if result.hotel.amenities.count > 4 {
+                        Text("+\(result.hotel.amenities.count - 4)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
 
-            Divider()
-
-            // Prices comparison
+            // Book button hint
             HStack {
-                // Provider count
-                Text("Compare \(result.providerCount) sites")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Spacer()
-
-                // Lowest price
-                if let lowest = result.lowestPrice {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("from")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                        Text(lowest.formattedPricePerNight)
-                            .font(.title3.bold())
-                            .foregroundStyle(.green)
-                        Text("/night")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                Image(systemName: "hand.tap")
+                Text("Tap to compare prices")
             }
+            .font(.caption2)
+            .foregroundStyle(.blue)
         }
         .padding()
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-    }
-
-    private var ratingColor: Color {
-        switch result.hotel.userRating {
-        case 9.0...: return .green
-        case 8.0..<9.0: return .blue
-        case 7.0..<8.0: return .orange
-        default: return .gray
-        }
+        .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
     }
 }
 
-// MARK: - Hotel Detail View
+// MARK: - Hotel Detail Sheet
 
-struct HotelDetailView: View {
+struct HotelDetailSheet: View {
     let result: HotelSearchResult
-    let checkIn: Date
-    let checkOut: Date
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Header
-                VStack(alignment: .leading, spacing: 8) {
-                    Text(result.hotel.starRatingDisplay)
-                        .foregroundStyle(.orange)
-
-                    Text(result.hotel.name)
-                        .font(.title2.bold())
-
-                    if let localName = result.hotel.nameLocal {
-                        Text(localName)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    // Rating
-                    HStack(spacing: 8) {
-                        Text(result.hotel.formattedRating)
-                            .font(.headline)
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 6)
-                            .background(Color.blue)
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
-
-                        Text(result.hotel.ratingDescription)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-
-                        Text("(\(result.hotel.reviewCount) reviews)")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                    }
-                }
-                .padding()
-
-                Divider()
-
-                // Location
-                VStack(alignment: .leading, spacing: 8) {
-                    Label("Location", systemImage: "mappin.circle.fill")
-                        .font(.headline)
-
-                    Text(result.hotel.address)
-                        .font(.subheadline)
-
-                    if let neighborhood = result.hotel.neighborhood {
-                        Text(neighborhood)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    if let distance = result.hotel.distanceFromCenter {
-                        Text("\(String(format: "%.1f", distance)) km from city center")
-                            .font(.caption)
-                            .foregroundStyle(.blue)
-                    }
-                }
-                .padding(.horizontal)
-
-                Divider()
-
-                // Amenities
-                VStack(alignment: .leading, spacing: 12) {
-                    Label("Amenities", systemImage: "checkmark.circle.fill")
-                        .font(.headline)
-
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 120))], spacing: 8) {
-                        ForEach(result.hotel.amenities) { amenity in
-                            HStack(spacing: 6) {
-                                Image(systemName: amenity.systemImage)
-                                    .foregroundStyle(.blue)
-                                Text(amenity.displayName)
-                                    .font(.caption)
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                }
-                .padding(.horizontal)
-
-                Divider()
-
-                // Check-in/out times
-                HStack(spacing: 24) {
-                    VStack(alignment: .leading) {
-                        Text("Check-in")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(result.hotel.checkInTime)
-                            .font(.headline)
-                    }
-
-                    VStack(alignment: .leading) {
-                        Text("Check-out")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(result.hotel.checkOutTime)
-                            .font(.headline)
-                    }
-                }
-                .padding(.horizontal)
-
-                Divider()
-
-                // Price Comparison
-                VStack(alignment: .leading, spacing: 12) {
-                    Label("Compare Prices", systemImage: "dollarsign.circle.fill")
-                        .font(.headline)
-
-                    ForEach(result.prices.sorted(by: { $0.pricePerNight < $1.pricePerNight })) { price in
-                        PriceComparisonRow(price: price)
-                    }
-                }
-                .padding(.horizontal)
-            }
-            .padding(.bottom, 32)
-        }
-        .navigationTitle("Hotel Details")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-// MARK: - Price Comparison Row
-
-struct PriceComparisonRow: View {
-    let price: HotelPrice
-
-    var body: some View {
-        HStack {
-            // Provider
-            VStack(alignment: .leading, spacing: 2) {
-                Text(price.provider.displayName)
-                    .font(.subheadline.bold())
-
-                HStack(spacing: 4) {
-                    if price.includesBreakfast {
-                        Label("Breakfast", systemImage: "cup.and.saucer.fill")
-                            .font(.caption2)
-                            .foregroundStyle(.green)
-                    }
-                    if price.includesTax {
-                        Text("Tax included")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-
-            Spacer()
-
-            // Price and Book Button
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(price.formattedPricePerNight)
-                    .font(.headline)
-                    .foregroundStyle(.primary)
-
-                if let url = URL(string: price.bookingURL) {
-                    Link(destination: url) {
-                        Text("Book Now")
-                            .font(.caption.bold())
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.blue)
-                            .foregroundStyle(.white)
-                            .clipShape(Capsule())
-                    }
-                }
-            }
-        }
-        .padding()
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-}
-
-// MARK: - Hotel Filter View
-
-struct HotelFilterView: View {
-    @ObservedObject var viewModel: HotelSearchViewModel
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Star Rating") {
-                    Picker("Minimum Stars", selection: $viewModel.minStars) {
-                        Text("Any").tag(Optional<Int>.none)
-                        ForEach(1...5, id: \.self) { stars in
-                            Text(String(repeating: "★", count: stars)).tag(Optional(stars))
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    // Header
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(result.hotel.starDisplay)
+                            .foregroundStyle(.orange)
+
+                        Text(result.hotel.name)
+                            .font(.title2.bold())
+
+                        Text(result.hotel.nameLocal)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+
+                        // Rating
+                        HStack(spacing: 12) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "star.fill")
+                                    .foregroundStyle(.orange)
+                                Text(result.hotel.formattedRating)
+                                    .fontWeight(.bold)
+                            }
+
+                            Text(result.hotel.ratingDescription)
+                                .foregroundStyle(.secondary)
+
+                            Text("(\(result.hotel.reviewCount) reviews)")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .font(.subheadline)
+                    }
+                    .padding()
+
+                    Divider()
+
+                    // Location
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("Location", systemImage: "mappin.circle.fill")
+                            .font(.headline)
+
+                        Text(result.hotel.address)
+                        Text("\(result.hotel.neighborhood), \(result.hotel.area)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal)
+
+                    Divider()
+
+                    // Amenities
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("Amenities", systemImage: "checkmark.circle.fill")
+                            .font(.headline)
+
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 100))], spacing: 8) {
+                            ForEach(result.hotel.amenities, id: \.self) { amenity in
+                                HStack(spacing: 4) {
+                                    Image(systemName: amenityIcon(for: amenity))
+                                        .foregroundStyle(.blue)
+                                    Text(amenity)
+                                        .font(.caption)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                         }
                     }
-                }
+                    .padding(.horizontal)
 
-                Section("Price") {
-                    Toggle("Set Max Price", isOn: Binding(
-                        get: { viewModel.maxPrice != nil },
-                        set: { viewModel.maxPrice = $0 ? 5000 : nil }
-                    ))
+                    Divider()
 
-                    if viewModel.maxPrice != nil {
-                        Stepper(
-                            "Max: NT$ \(Int(viewModel.maxPrice ?? 5000))",
-                            value: Binding(
-                                get: { viewModel.maxPrice ?? 5000 },
-                                set: { viewModel.maxPrice = $0 }
-                            ),
-                            in: 1000...50000,
-                            step: 500
-                        )
-                    }
-                }
+                    // Booking Links
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("Book Now", systemImage: "link.circle.fill")
+                            .font(.headline)
 
-                Section("Sort By") {
-                    Picker("Sort", selection: $viewModel.sortBy) {
-                        ForEach(HotelSortOption.allCases) { option in
-                            Text(option.displayName).tag(option)
+                        Text("Compare prices and book on these sites:")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        ForEach(result.bookingLinks) { link in
+                            if let url = URL(string: link.url) {
+                                Link(destination: url) {
+                                    HStack {
+                                        Image(systemName: link.provider.iconName)
+                                            .frame(width: 24)
+                                        Text(link.provider.displayName)
+                                        Spacer()
+                                        Image(systemName: "arrow.up.right.square")
+                                    }
+                                    .padding()
+                                    .background(Color(.systemGray6))
+                                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                     }
-                    .pickerStyle(.inline)
+                    .padding(.horizontal)
                 }
+                .padding(.bottom, 32)
             }
-            .navigationTitle("Filters")
+            .navigationTitle("Hotel Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Reset") {
-                        viewModel.resetFilters()
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Apply") {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
                         dismiss()
-                        Task { await viewModel.search() }
                     }
                 }
             }
+        }
+    }
+
+    private func amenityIcon(for amenity: String) -> String {
+        switch amenity.lowercased() {
+        case "wifi": return "wifi"
+        case "pool": return "figure.pool.swim"
+        case "spa": return "sparkles"
+        case "gym": return "dumbbell.fill"
+        case "restaurant": return "fork.knife"
+        case "bar": return "wineglass.fill"
+        case "hot spring": return "drop.fill"
+        case "lake view", "mountain view": return "eye.fill"
+        case "laundry": return "washer.fill"
+        default: return "checkmark"
         }
     }
 }
 
-// MARK: - View Model
+// MARK: - Search Near Destination View (For Trip Integration)
 
-@MainActor
-class HotelSearchViewModel: ObservableObject {
-    @Published var location: String = "Taipei"
-    @Published var checkIn: Date = Date()
-    @Published var checkOut: Date = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
-    @Published var guests: Int = 2
-    @Published var rooms: Int = 1
-    @Published var minStars: Int? = nil
-    @Published var maxPrice: Double? = nil
-    @Published var sortBy: HotelSortOption = .recommended
+struct HotelSearchNearView: View {
+    let coordinate: CLLocationCoordinate2D
+    let locationName: String
 
-    @Published var results: [HotelSearchResult] = []
-    @Published var isLoading = false
-    @Published var errorMessage: String?
-    @Published var hasSearched = false
+    @State private var sortBy: HotelSortOption = .distance
+    @State private var results: [HotelSearchResult] = []
+    @State private var selectedHotel: HotelSearchResult?
+    @State private var searchRadius: Double = 5.0
 
+    @Environment(\.dismiss) private var dismiss
     private let service = HotelSearchService.shared
 
-    var nights: Int {
-        let days = Calendar.current.dateComponents([.day], from: checkIn, to: checkOut).day ?? 1
-        return max(1, days)
-    }
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                // Location header
+                HStack {
+                    Image(systemName: "mappin.circle.fill")
+                        .foregroundStyle(.red)
+                    VStack(alignment: .leading) {
+                        Text("Hotels near")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(locationName)
+                            .font(.headline)
+                    }
+                    Spacer()
+                }
+                .padding()
+                .background(Color(.systemGray6))
 
-    func search() async {
-        isLoading = true
-        errorMessage = nil
-        hasSearched = true
+                // Sort and radius controls
+                HStack {
+                    // Radius picker
+                    Menu {
+                        ForEach([2.0, 5.0, 10.0, 20.0], id: \.self) { radius in
+                            Button {
+                                searchRadius = radius
+                                search()
+                            } label: {
+                                HStack {
+                                    Text("\(Int(radius)) km")
+                                    if searchRadius == radius {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "circle.dashed")
+                            Text("\(Int(searchRadius)) km")
+                        }
+                        .font(.subheadline)
+                    }
 
-        let request = HotelSearchRequest(
-            location: location,
-            latitude: nil,
-            longitude: nil,
-            checkIn: checkIn,
-            checkOut: checkOut,
-            guests: guests,
-            rooms: rooms,
-            minStars: minStars,
-            maxPrice: maxPrice,
-            amenities: nil,
-            sortBy: sortBy
-        )
+                    Spacer()
 
-        do {
-            results = try await service.searchHotels(request: request)
-        } catch {
-            errorMessage = error.localizedDescription
-            results = []
+                    // Sort picker
+                    Menu {
+                        ForEach(HotelSortOption.allCases) { option in
+                            Button {
+                                sortBy = option
+                                search()
+                            } label: {
+                                HStack {
+                                    Image(systemName: option.systemImage)
+                                    Text(option.displayName)
+                                    if sortBy == option {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: sortBy.systemImage)
+                            Text(sortBy.displayName)
+                        }
+                        .font(.subheadline)
+                    }
+                }
+                .padding()
+
+                if results.isEmpty {
+                    ContentUnavailableView {
+                        Label("No Hotels Nearby", systemImage: "building.2")
+                    } description: {
+                        Text("Try increasing the search radius")
+                    }
+                } else {
+                    // Results list
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(results) { result in
+                                HotelCard(result: result)
+                                    .onTapGesture {
+                                        selectedHotel = result
+                                    }
+                            }
+                        }
+                        .padding()
+                    }
+                }
+            }
+            .navigationTitle("Nearby Hotels")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+            .sheet(item: $selectedHotel) { result in
+                HotelDetailSheet(result: result)
+            }
+            .onAppear {
+                search()
+            }
         }
-
-        isLoading = false
     }
 
-    func resetFilters() {
-        minStars = nil
-        maxPrice = nil
-        sortBy = .recommended
+    private func search() {
+        results = service.searchHotels(near: coordinate, radiusKm: searchRadius, sortBy: sortBy)
     }
 }
 

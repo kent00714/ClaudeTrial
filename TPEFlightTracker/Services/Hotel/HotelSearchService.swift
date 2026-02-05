@@ -1,460 +1,417 @@
 import Foundation
 import CoreLocation
 
-// MARK: - Hotel Search Service Protocol
+// MARK: - Hotel Search Service
 
-protocol HotelSearchServiceProtocol {
-    func searchHotels(request: HotelSearchRequest) async throws -> [HotelSearchResult]
-    func getHotelDetails(hotelId: String) async throws -> Hotel
-    func getPrices(hotelId: String, checkIn: Date, checkOut: Date, guests: Int) async throws -> [HotelPrice]
-    func getNearbyHotels(coordinate: CLLocationCoordinate2D, radiusKm: Double) async throws -> [Hotel]
-}
-
-// MARK: - Hotel API Configuration
-
-class HotelAPIConfig {
-    static let shared = HotelAPIConfig()
-
-    private let defaults = UserDefaults.standard
-    private let apiKeyKey = "hotel_api_key"
-    private let apiSecretKey = "hotel_api_secret"
-    private let providerKey = "hotel_api_provider"
-
-    var apiKey: String? {
-        get { defaults.string(forKey: apiKeyKey) }
-        set { defaults.set(newValue, forKey: apiKeyKey) }
-    }
-
-    var apiSecret: String? {
-        get { defaults.string(forKey: apiSecretKey) }
-        set { defaults.set(newValue, forKey: apiSecretKey) }
-    }
-
-    var provider: HotelAPIProvider {
-        get {
-            if let raw = defaults.string(forKey: providerKey),
-               let provider = HotelAPIProvider(rawValue: raw) {
-                return provider
-            }
-            return .mock
-        }
-        set { defaults.set(newValue.rawValue, forKey: providerKey) }
-    }
-
-    func configure(provider: HotelAPIProvider, apiKey: String, apiSecret: String? = nil) {
-        self.provider = provider
-        self.apiKey = apiKey
-        self.apiSecret = apiSecret
-    }
-}
-
-enum HotelAPIProvider: String, CaseIterable {
-    case mock = "mock"
-    case amadeus = "amadeus"  // Free tier: 2,000 calls/month
-    case rapidapi = "rapidapi"  // Various hotel APIs
-
-    var displayName: String {
-        switch self {
-        case .mock: return "Demo Mode"
-        case .amadeus: return "Amadeus API"
-        case .rapidapi: return "RapidAPI"
-        }
-    }
-
-    var baseURL: String {
-        switch self {
-        case .mock: return ""
-        case .amadeus: return "https://api.amadeus.com/v1"
-        case .rapidapi: return "https://hotels4.p.rapidapi.com"
-        }
-    }
-}
-
-// MARK: - Hotel Search Service (Mock Implementation)
-
-class HotelSearchService: HotelSearchServiceProtocol {
+class HotelSearchService {
 
     static let shared = HotelSearchService()
 
-    private let config = HotelAPIConfig.shared
+    // MARK: - Search Hotels Near Location
 
-    func searchHotels(request: HotelSearchRequest) async throws -> [HotelSearchResult] {
-        // Use real API if configured, otherwise use mock
-        switch config.provider {
-        case .mock:
-            return try await searchHotelsMock(request: request)
-        case .amadeus:
-            return try await searchHotelsAmadeus(request: request)
-        case .rapidapi:
-            return try await searchHotelsRapidAPI(request: request)
-        }
-    }
-
-    func getHotelDetails(hotelId: String) async throws -> Hotel {
-        // Mock implementation - return from mock data
-        try await Task.sleep(nanoseconds: 300_000_000)
-
-        if let result = mockTaipeiHotels.first(where: { $0.hotel.id == hotelId }) {
-            return result.hotel
-        }
-        throw HotelSearchError.hotelNotFound
-    }
-
-    func getPrices(hotelId: String, checkIn: Date, checkOut: Date, guests: Int) async throws -> [HotelPrice] {
-        try await Task.sleep(nanoseconds: 500_000_000)
-
-        if let result = mockTaipeiHotels.first(where: { $0.hotel.id == hotelId }) {
-            return result.prices
-        }
-        throw HotelSearchError.hotelNotFound
-    }
-
-    func getNearbyHotels(coordinate: CLLocationCoordinate2D, radiusKm: Double) async throws -> [Hotel] {
-        try await Task.sleep(nanoseconds: 300_000_000)
-
-        return mockTaipeiHotels
-            .map { $0.hotel }
-            .filter { hotel in
-                let distance = calculateDistance(from: coordinate, to: hotel.coordinate)
-                return distance <= radiusKm
-            }
-    }
-
-    // MARK: - Mock Implementation
-
-    private func searchHotelsMock(request: HotelSearchRequest) async throws -> [HotelSearchResult] {
-        // Simulate network delay
-        try await Task.sleep(nanoseconds: 800_000_000)
-
-        var results = mockTaipeiHotels
-
-        // Filter by stars
-        if let minStars = request.minStars {
-            results = results.filter { $0.hotel.starRating >= minStars }
+    func searchHotels(
+        near coordinate: CLLocationCoordinate2D,
+        radiusKm: Double = 5.0,
+        sortBy: HotelSortOption = .rating
+    ) -> [HotelSearchResult] {
+        var results = allTaiwanHotels.map { hotel -> HotelSearchResult in
+            let distance = calculateDistance(from: coordinate, to: hotel.coordinate)
+            return HotelSearchResult(
+                id: hotel.id,
+                hotel: hotel,
+                distanceKm: distance,
+                bookingLinks: generateBookingLinks(for: hotel)
+            )
         }
 
-        // Filter by max price
-        if let maxPrice = request.maxPrice {
-            results = results.filter { result in
-                result.lowestPrice?.pricePerNight ?? 0 <= maxPrice
-            }
-        }
+        // Filter by radius
+        results = results.filter { $0.distanceKm <= radiusKm }
 
         // Sort results
-        switch request.sortBy {
-        case .recommended:
-            results.sort { $0.hotel.userRating > $1.hotel.userRating }
-        case .priceLow:
-            results.sort { ($0.lowestPrice?.pricePerNight ?? 0) < ($1.lowestPrice?.pricePerNight ?? 0) }
-        case .priceHigh:
-            results.sort { ($0.lowestPrice?.pricePerNight ?? 0) > ($1.lowestPrice?.pricePerNight ?? 0) }
-        case .rating:
-            results.sort { $0.hotel.userRating > $1.hotel.userRating }
+        switch sortBy {
         case .distance:
-            results.sort { ($0.hotel.distanceFromCenter ?? 0) < ($1.hotel.distanceFromCenter ?? 0) }
-        case .stars:
-            results.sort { $0.hotel.starRating > $1.hotel.starRating }
+            results.sort { $0.distanceKm < $1.distanceKm }
+        case .rating:
+            results.sort { $0.hotel.rating > $1.hotel.rating }
+        case .ratingCount:
+            results.sort { $0.hotel.reviewCount > $1.hotel.reviewCount }
+        case .priceEstimate:
+            results.sort { $0.hotel.priceLevel < $1.hotel.priceLevel }
         }
 
         return results
     }
 
-    // MARK: - Amadeus API (Placeholder)
+    func searchHotels(
+        in area: String,
+        sortBy: HotelSortOption = .rating
+    ) -> [HotelSearchResult] {
+        let lowercased = area.lowercased()
 
-    private func searchHotelsAmadeus(request: HotelSearchRequest) async throws -> [HotelSearchResult] {
-        guard let apiKey = config.apiKey, let apiSecret = config.apiSecret else {
-            throw HotelSearchError.notConfigured
+        var results = allTaiwanHotels
+            .filter { hotel in
+                hotel.area.lowercased().contains(lowercased) ||
+                hotel.name.lowercased().contains(lowercased) ||
+                hotel.neighborhood.lowercased().contains(lowercased)
+            }
+            .map { hotel -> HotelSearchResult in
+                HotelSearchResult(
+                    id: hotel.id,
+                    hotel: hotel,
+                    distanceKm: 0,
+                    bookingLinks: generateBookingLinks(for: hotel)
+                )
+            }
+
+        // Sort results
+        switch sortBy {
+        case .distance:
+            break // No distance when searching by area
+        case .rating:
+            results.sort { $0.hotel.rating > $1.hotel.rating }
+        case .ratingCount:
+            results.sort { $0.hotel.reviewCount > $1.hotel.reviewCount }
+        case .priceEstimate:
+            results.sort { $0.hotel.priceLevel < $1.hotel.priceLevel }
         }
 
-        // TODO: Implement Amadeus API integration
-        // 1. Get access token: POST https://api.amadeus.com/v1/security/oauth2/token
-        // 2. Search hotels: GET https://api.amadeus.com/v1/reference-data/locations/hotels/by-city
-        // 3. Get offers: GET https://api.amadeus.com/v3/shopping/hotel-offers
-
-        // For now, fall back to mock
-        print("Amadeus API configured with key: \(apiKey.prefix(8))...")
-        return try await searchHotelsMock(request: request)
+        return results
     }
 
-    // MARK: - RapidAPI (Placeholder)
+    // MARK: - Generate Booking Links
 
-    private func searchHotelsRapidAPI(request: HotelSearchRequest) async throws -> [HotelSearchResult] {
-        guard let apiKey = config.apiKey else {
-            throw HotelSearchError.notConfigured
-        }
+    func generateBookingLinks(for hotel: Hotel) -> [BookingLink] {
+        let encodedName = hotel.name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? hotel.name
+        let encodedArea = hotel.area.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? hotel.area
 
-        // TODO: Implement RapidAPI Hotels integration
-        // Various providers available: Hotels.com, Booking.com aggregators
-
-        print("RapidAPI configured with key: \(apiKey.prefix(8))...")
-        return try await searchHotelsMock(request: request)
-    }
-
-    // MARK: - Helper Functions
-
-    private func calculateDistance(from: CLLocationCoordinate2D, to: CLLocationCoordinate2D) -> Double {
-        let fromLocation = CLLocation(latitude: from.latitude, longitude: from.longitude)
-        let toLocation = CLLocation(latitude: to.latitude, longitude: to.longitude)
-        return fromLocation.distance(from: toLocation) / 1000.0  // km
-    }
-
-    // MARK: - Mock Data for Taiwan Hotels
-
-    private var mockTaipeiHotels: [HotelSearchResult] {
-        [
-            createHotelResult(
-                id: "hotel_grand_hyatt",
-                name: "Grand Hyatt Taipei",
-                nameLocal: "台北君悅酒店",
-                address: "No. 2, Songshou Road, Xinyi District, Taipei",
-                latitude: 25.0340,
-                longitude: 121.5654,
-                stars: 5,
-                rating: 9.2,
-                reviews: 3456,
-                neighborhood: "Xinyi District",
-                distance: 0.5,
-                amenities: [.wifi, .pool, .gym, .spa, .restaurant, .bar, .roomService, .businessCenter],
-                prices: [
-                    (provider: .booking, price: 8500, hasBreakfast: true),
-                    (provider: .agoda, price: 8200, hasBreakfast: true),
-                    (provider: .expedia, price: 8800, hasBreakfast: false),
-                    (provider: .direct, price: 9000, hasBreakfast: true)
-                ]
+        return [
+            BookingLink(
+                provider: .googleMaps,
+                url: "https://www.google.com/maps/search/\(encodedName)+\(encodedArea)",
+                label: "View on Google Maps"
             ),
-            createHotelResult(
-                id: "hotel_w_taipei",
-                name: "W Taipei",
-                nameLocal: "台北W飯店",
-                address: "No. 10, Zhongxiao East Road Section 5, Xinyi District",
-                latitude: 25.0388,
-                longitude: 121.5667,
-                stars: 5,
-                rating: 8.9,
-                reviews: 2890,
-                neighborhood: "Xinyi District",
-                distance: 0.3,
-                amenities: [.wifi, .pool, .gym, .spa, .restaurant, .bar, .roomService],
-                prices: [
-                    (provider: .booking, price: 9200, hasBreakfast: false),
-                    (provider: .agoda, price: 8900, hasBreakfast: false),
-                    (provider: .hotels, price: 9500, hasBreakfast: true)
-                ]
+            BookingLink(
+                provider: .booking,
+                url: "https://www.booking.com/searchresults.html?ss=\(encodedName)+\(encodedArea)",
+                label: "Search on Booking.com"
             ),
-            createHotelResult(
-                id: "hotel_regent",
-                name: "Regent Taipei",
-                nameLocal: "台北晶華酒店",
-                address: "No. 3, Lane 39, Section 2, Zhongshan North Road",
-                latitude: 25.0528,
-                longitude: 121.5228,
-                stars: 5,
-                rating: 9.0,
-                reviews: 4123,
-                neighborhood: "Zhongshan District",
-                distance: 2.1,
-                amenities: [.wifi, .pool, .gym, .spa, .restaurant, .bar, .roomService, .airportShuttle],
-                prices: [
-                    (provider: .booking, price: 7800, hasBreakfast: true),
-                    (provider: .agoda, price: 7500, hasBreakfast: true),
-                    (provider: .trip, price: 7600, hasBreakfast: true)
-                ]
+            BookingLink(
+                provider: .agoda,
+                url: "https://www.agoda.com/search?searchtext=\(encodedName)+\(encodedArea)",
+                label: "Search on Agoda"
             ),
-            createHotelResult(
-                id: "hotel_eslite",
-                name: "Eslite Hotel",
-                nameLocal: "誠品行旅",
-                address: "No. 98, Yanchang Road, Xinyi District",
-                latitude: 25.0403,
-                longitude: 121.5612,
-                stars: 5,
-                rating: 9.1,
-                reviews: 1567,
-                neighborhood: "Songshan Cultural Park",
-                distance: 1.2,
-                amenities: [.wifi, .gym, .restaurant, .bar, .laundry],
-                prices: [
-                    (provider: .booking, price: 6800, hasBreakfast: true),
-                    (provider: .agoda, price: 6500, hasBreakfast: true),
-                    (provider: .direct, price: 7000, hasBreakfast: true)
-                ]
+            BookingLink(
+                provider: .expedia,
+                url: "https://www.expedia.com/Hotel-Search?destination=\(encodedName)+\(encodedArea)",
+                label: "Search on Expedia"
             ),
-            createHotelResult(
-                id: "hotel_amba_songshan",
-                name: "amba Taipei Songshan",
-                nameLocal: "台北松山意舍酒店",
-                address: "No. 8, Section 7, Civic Boulevard, Songshan District",
-                latitude: 25.0498,
-                longitude: 121.5778,
-                stars: 4,
-                rating: 8.5,
-                reviews: 2341,
-                neighborhood: "Raohe Night Market",
-                distance: 3.5,
-                amenities: [.wifi, .gym, .restaurant, .bar, .laundry],
-                prices: [
-                    (provider: .booking, price: 4200, hasBreakfast: true),
-                    (provider: .agoda, price: 4000, hasBreakfast: true),
-                    (provider: .expedia, price: 4500, hasBreakfast: false)
-                ]
-            ),
-            createHotelResult(
-                id: "hotel_palais_de_chine",
-                name: "Palais de Chine Hotel",
-                nameLocal: "君品酒店",
-                address: "No. 3, Section 1, Chengde Road, Datong District",
-                latitude: 25.0478,
-                longitude: 121.5170,
-                stars: 5,
-                rating: 8.8,
-                reviews: 1876,
-                neighborhood: "Taipei Main Station",
-                distance: 1.8,
-                amenities: [.wifi, .gym, .spa, .restaurant, .bar, .roomService, .businessCenter],
-                prices: [
-                    (provider: .booking, price: 5500, hasBreakfast: true),
-                    (provider: .agoda, price: 5200, hasBreakfast: true),
-                    (provider: .hotels, price: 5800, hasBreakfast: true)
-                ]
-            ),
-            createHotelResult(
-                id: "hotel_citizen_m",
-                name: "citizenM Taipei North Gate",
-                nameLocal: "世民酒店台北北門",
-                address: "No. 3, Zhongxiao West Road Section 1, Zhongzheng District",
-                latitude: 25.0461,
-                longitude: 121.5103,
-                stars: 4,
-                rating: 8.7,
-                reviews: 987,
-                neighborhood: "Beimen",
-                distance: 2.0,
-                amenities: [.wifi, .gym, .bar, .laundry],
-                prices: [
-                    (provider: .booking, price: 3800, hasBreakfast: false),
-                    (provider: .agoda, price: 3600, hasBreakfast: false),
-                    (provider: .direct, price: 3500, hasBreakfast: false)
-                ]
-            ),
-            createHotelResult(
-                id: "hotel_okura",
-                name: "The Okura Prestige Taipei",
-                nameLocal: "大倉久和大飯店",
-                address: "No. 9, Section 1, Nanjing East Road, Zhongshan District",
-                latitude: 25.0520,
-                longitude: 121.5235,
-                stars: 5,
-                rating: 9.3,
-                reviews: 2654,
-                neighborhood: "Zhongshan",
-                distance: 2.3,
-                amenities: [.wifi, .pool, .gym, .spa, .restaurant, .bar, .roomService, .businessCenter, .airportShuttle],
-                prices: [
-                    (provider: .booking, price: 8800, hasBreakfast: true),
-                    (provider: .agoda, price: 8500, hasBreakfast: true),
-                    (provider: .trip, price: 8600, hasBreakfast: true)
-                ]
+            BookingLink(
+                provider: .trip,
+                url: "https://www.trip.com/hotels/?keyword=\(encodedName)",
+                label: "Search on Trip.com"
             )
         ]
     }
 
-    private func createHotelResult(
-        id: String,
-        name: String,
-        nameLocal: String,
-        address: String,
-        latitude: Double,
-        longitude: Double,
-        stars: Int,
-        rating: Double,
-        reviews: Int,
-        neighborhood: String,
-        distance: Double,
-        amenities: [HotelAmenity],
-        prices: [(provider: HotelProvider, price: Double, hasBreakfast: Bool)]
-    ) -> HotelSearchResult {
-        let hotel = Hotel(
-            id: id,
-            name: name,
-            nameLocal: nameLocal,
-            address: address,
-            latitude: latitude,
-            longitude: longitude,
-            starRating: stars,
-            userRating: rating,
-            reviewCount: reviews,
-            thumbnailURL: nil,
-            photos: [],
-            amenities: amenities,
-            description: "Experience exceptional hospitality in the heart of Taipei.",
-            checkInTime: "15:00",
-            checkOutTime: "11:00",
-            distanceFromCenter: distance,
-            neighborhood: neighborhood
-        )
+    // MARK: - Helper
 
-        let hotelPrices = prices.map { priceInfo in
-            HotelPrice(
-                id: "\(id)_\(priceInfo.provider.rawValue)",
-                hotelId: id,
-                roomId: nil,
-                provider: priceInfo.provider,
-                pricePerNight: priceInfo.price,
-                totalPrice: priceInfo.price,  // Single night
-                currency: "TWD",
-                includesBreakfast: priceInfo.hasBreakfast,
-                includesTax: true,
-                bookingURL: getBookingURL(provider: priceInfo.provider, hotelName: name),
-                lastUpdated: Date()
-            )
-        }
-
-        return HotelSearchResult(
-            id: id,
-            hotel: hotel,
-            prices: hotelPrices,
-            availableRooms: []
-        )
+    private func calculateDistance(from: CLLocationCoordinate2D, to: CLLocationCoordinate2D) -> Double {
+        let fromLocation = CLLocation(latitude: from.latitude, longitude: from.longitude)
+        let toLocation = CLLocation(latitude: to.latitude, longitude: to.longitude)
+        return fromLocation.distance(from: toLocation) / 1000.0
     }
 
-    private func getBookingURL(provider: HotelProvider, hotelName: String) -> String {
-        let encodedName = hotelName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? hotelName
+    // MARK: - Taiwan Hotels Data (Curated)
 
-        switch provider {
-        case .booking:
-            return "https://www.booking.com/searchresults.html?ss=\(encodedName)"
-        case .agoda:
-            return "https://www.agoda.com/search?searchtext=\(encodedName)"
-        case .expedia:
-            return "https://www.expedia.com/Hotel-Search?destination=\(encodedName)"
-        case .hotels:
-            return "https://www.hotels.com/search.do?q-destination=\(encodedName)"
-        case .trip:
-            return "https://www.trip.com/hotels/?keyword=\(encodedName)"
-        case .direct:
-            return "https://www.google.com/search?q=\(encodedName)+official+website"
+    private var allTaiwanHotels: [Hotel] {
+        [
+            // Taipei - Xinyi District
+            Hotel(id: "grand_hyatt", name: "Grand Hyatt Taipei", nameLocal: "台北君悅酒店",
+                  area: "Taipei", neighborhood: "Xinyi District", address: "No. 2, Songshou Road",
+                  latitude: 25.0340, longitude: 121.5654,
+                  rating: 4.6, reviewCount: 12453, starRating: 5, priceLevel: 4,
+                  amenities: ["Pool", "Spa", "Gym", "Restaurant", "Bar", "WiFi"]),
+
+            Hotel(id: "w_taipei", name: "W Taipei", nameLocal: "台北W飯店",
+                  area: "Taipei", neighborhood: "Xinyi District", address: "No. 10, Zhongxiao East Road Sec 5",
+                  latitude: 25.0388, longitude: 121.5667,
+                  rating: 4.5, reviewCount: 8932, starRating: 5, priceLevel: 4,
+                  amenities: ["Pool", "Spa", "Gym", "Restaurant", "Bar", "WiFi"]),
+
+            Hotel(id: "humble_house", name: "Humble House Taipei", nameLocal: "寒舍艾麗酒店",
+                  area: "Taipei", neighborhood: "Xinyi District", address: "No. 18, Songgao Road",
+                  latitude: 25.0365, longitude: 121.5678,
+                  rating: 4.4, reviewCount: 5621, starRating: 5, priceLevel: 4,
+                  amenities: ["Gym", "Restaurant", "Bar", "WiFi"]),
+
+            // Taipei - Zhongshan District
+            Hotel(id: "regent", name: "Regent Taipei", nameLocal: "台北晶華酒店",
+                  area: "Taipei", neighborhood: "Zhongshan District", address: "No. 3, Lane 39, Sec 2, Zhongshan N Rd",
+                  latitude: 25.0528, longitude: 121.5228,
+                  rating: 4.6, reviewCount: 15234, starRating: 5, priceLevel: 4,
+                  amenities: ["Pool", "Spa", "Gym", "Restaurant", "Bar", "WiFi"]),
+
+            Hotel(id: "okura", name: "The Okura Prestige Taipei", nameLocal: "大倉久和大飯店",
+                  area: "Taipei", neighborhood: "Zhongshan District", address: "No. 9, Sec 1, Nanjing E Rd",
+                  latitude: 25.0520, longitude: 121.5235,
+                  rating: 4.7, reviewCount: 9876, starRating: 5, priceLevel: 4,
+                  amenities: ["Pool", "Spa", "Gym", "Restaurant", "Bar", "WiFi"]),
+
+            Hotel(id: "ambassador", name: "Ambassador Hotel Taipei", nameLocal: "台北國賓大飯店",
+                  area: "Taipei", neighborhood: "Zhongshan District", address: "No. 63, Sec 2, Zhongshan N Rd",
+                  latitude: 25.0535, longitude: 121.5220,
+                  rating: 4.3, reviewCount: 7654, starRating: 5, priceLevel: 3,
+                  amenities: ["Pool", "Gym", "Restaurant", "WiFi"]),
+
+            // Taipei - Datong/Beimen
+            Hotel(id: "palais_de_chine", name: "Palais de Chine Hotel", nameLocal: "君品酒店",
+                  area: "Taipei", neighborhood: "Taipei Main Station", address: "No. 3, Sec 1, Chengde Rd",
+                  latitude: 25.0478, longitude: 121.5170,
+                  rating: 4.5, reviewCount: 6543, starRating: 5, priceLevel: 3,
+                  amenities: ["Spa", "Gym", "Restaurant", "Bar", "WiFi"]),
+
+            Hotel(id: "citizen_m", name: "citizenM Taipei North Gate", nameLocal: "世民酒店台北北門",
+                  area: "Taipei", neighborhood: "Beimen", address: "No. 3, Zhongxiao W Rd Sec 1",
+                  latitude: 25.0461, longitude: 121.5103,
+                  rating: 4.4, reviewCount: 3456, starRating: 4, priceLevel: 2,
+                  amenities: ["Gym", "Bar", "WiFi"]),
+
+            // Taipei - Songshan
+            Hotel(id: "amba_songshan", name: "amba Taipei Songshan", nameLocal: "台北松山意舍酒店",
+                  area: "Taipei", neighborhood: "Raohe Night Market", address: "No. 8, Sec 7, Civic Blvd",
+                  latitude: 25.0498, longitude: 121.5778,
+                  rating: 4.3, reviewCount: 4532, starRating: 4, priceLevel: 2,
+                  amenities: ["Gym", "Restaurant", "Bar", "WiFi"]),
+
+            Hotel(id: "eslite", name: "Eslite Hotel", nameLocal: "誠品行旅",
+                  area: "Taipei", neighborhood: "Songshan Cultural Park", address: "No. 98, Yanchang Rd",
+                  latitude: 25.0403, longitude: 121.5612,
+                  rating: 4.6, reviewCount: 5678, starRating: 5, priceLevel: 3,
+                  amenities: ["Gym", "Restaurant", "WiFi"]),
+
+            // Taipei - Wanhua/Ximending
+            Hotel(id: "just_sleep_ximending", name: "Just Sleep Ximending", nameLocal: "捷絲旅西門町館",
+                  area: "Taipei", neighborhood: "Ximending", address: "No. 41, Sec 2, Wuchang St",
+                  latitude: 25.0425, longitude: 121.5075,
+                  rating: 4.2, reviewCount: 6789, starRating: 3, priceLevel: 2,
+                  amenities: ["WiFi", "Laundry"]),
+
+            Hotel(id: "amba_ximending", name: "amba Taipei Ximending", nameLocal: "台北西門町意舍酒店",
+                  area: "Taipei", neighborhood: "Ximending", address: "No. 77, Wuchang St Sec 2",
+                  latitude: 25.0430, longitude: 121.5068,
+                  rating: 4.3, reviewCount: 5432, starRating: 4, priceLevel: 2,
+                  amenities: ["Gym", "Restaurant", "Bar", "WiFi"]),
+
+            // Taipei - Beitou
+            Hotel(id: "grand_view_beitou", name: "Grand View Resort Beitou", nameLocal: "北投麗禧溫泉酒店",
+                  area: "Taipei", neighborhood: "Beitou Hot Springs", address: "No. 30, Youya Rd",
+                  latitude: 25.1372, longitude: 121.5089,
+                  rating: 4.5, reviewCount: 3456, starRating: 5, priceLevel: 4,
+                  amenities: ["Hot Spring", "Spa", "Restaurant", "WiFi"]),
+
+            Hotel(id: "asia_pacific_beitou", name: "Asia Pacific Hotel Beitou", nameLocal: "北投亞太飯店",
+                  area: "Taipei", neighborhood: "Beitou Hot Springs", address: "No. 31, Youya Rd",
+                  latitude: 25.1368, longitude: 121.5085,
+                  rating: 4.4, reviewCount: 2345, starRating: 4, priceLevel: 3,
+                  amenities: ["Hot Spring", "Spa", "Pool", "Restaurant", "WiFi"]),
+
+            // New Taipei - Jiufen area
+            Hotel(id: "jiufen_teahouse_hotel", name: "Jiufen Jin Shan Lou", nameLocal: "九份金山樓",
+                  area: "Jiufen", neighborhood: "Jiufen Old Street", address: "No. 19, Jishan St",
+                  latitude: 25.1095, longitude: 121.8447,
+                  rating: 4.3, reviewCount: 1234, starRating: 3, priceLevel: 2,
+                  amenities: ["Mountain View", "WiFi"]),
+
+            // Taichung
+            Hotel(id: "lalu_sun_moon", name: "The Lalu Sun Moon Lake", nameLocal: "日月潭涵碧樓",
+                  area: "Sun Moon Lake", neighborhood: "Nantou", address: "No. 142, Zhongxing Rd",
+                  latitude: 23.8608, longitude: 120.9167,
+                  rating: 4.7, reviewCount: 5678, starRating: 5, priceLevel: 5,
+                  amenities: ["Pool", "Spa", "Lake View", "Restaurant", "WiFi"]),
+
+            Hotel(id: "fleur_de_chine", name: "Fleur de Chine Hotel", nameLocal: "日月潭雲品酒店",
+                  area: "Sun Moon Lake", neighborhood: "Nantou", address: "No. 23, Zhongzheng Rd",
+                  latitude: 23.8612, longitude: 120.9245,
+                  rating: 4.5, reviewCount: 4532, starRating: 5, priceLevel: 4,
+                  amenities: ["Pool", "Spa", "Lake View", "Restaurant", "WiFi"]),
+
+            // Hualien - Taroko
+            Hotel(id: "silks_place_taroko", name: "Silks Place Taroko", nameLocal: "太魯閣晶英酒店",
+                  area: "Taroko", neighborhood: "Hualien", address: "No. 18, Tianxiang Rd",
+                  latitude: 24.1820, longitude: 121.4895,
+                  rating: 4.6, reviewCount: 3456, starRating: 5, priceLevel: 4,
+                  amenities: ["Pool", "Spa", "Mountain View", "Restaurant", "WiFi"]),
+
+            Hotel(id: "taroko_village", name: "Leader Village Taroko", nameLocal: "太魯閣山月村",
+                  area: "Taroko", neighborhood: "Hualien", address: "No. 231-1, Fushi Village",
+                  latitude: 24.1652, longitude: 121.5012,
+                  rating: 4.4, reviewCount: 2345, starRating: 4, priceLevel: 3,
+                  amenities: ["Mountain View", "Restaurant", "Cultural Experience", "WiFi"]),
+
+            // Kaohsiung
+            Hotel(id: "chateau_de_chine_kaohsiung", name: "Chateau de Chine Kaohsiung", nameLocal: "高雄翰品酒店",
+                  area: "Kaohsiung", neighborhood: "Yancheng District", address: "No. 33, Dayong Rd",
+                  latitude: 22.6245, longitude: 120.2835,
+                  rating: 4.4, reviewCount: 4567, starRating: 5, priceLevel: 3,
+                  amenities: ["Pool", "Gym", "Restaurant", "WiFi"]),
+
+            Hotel(id: "h2o_kaohsiung", name: "H2O Hotel", nameLocal: "高雄水京棧國際酒店",
+                  area: "Kaohsiung", neighborhood: "Lingya District", address: "No. 11, Linhai 2nd Rd",
+                  latitude: 22.6178, longitude: 120.3012,
+                  rating: 4.3, reviewCount: 3456, starRating: 4, priceLevel: 3,
+                  amenities: ["Pool", "Gym", "Restaurant", "WiFi"]),
+
+            // Tainan
+            Hotel(id: "silks_place_tainan", name: "Silks Place Tainan", nameLocal: "台南晶英酒店",
+                  area: "Tainan", neighborhood: "West Central District", address: "No. 1, Heyi Rd Sec 1",
+                  latitude: 22.9912, longitude: 120.1965,
+                  rating: 4.5, reviewCount: 5678, starRating: 5, priceLevel: 3,
+                  amenities: ["Pool", "Gym", "Restaurant", "WiFi"]),
+
+            Hotel(id: "tayih_landis_tainan", name: "Tayih Landis Hotel Tainan", nameLocal: "台南大億麗緻酒店",
+                  area: "Tainan", neighborhood: "West Central District", address: "No. 660, Sec 1, Ximen Rd",
+                  latitude: 22.9923, longitude: 120.1978,
+                  rating: 4.3, reviewCount: 3456, starRating: 5, priceLevel: 3,
+                  amenities: ["Gym", "Restaurant", "WiFi"])
+        ]
+    }
+}
+
+// MARK: - Hotel Model (Simplified)
+
+struct Hotel: Identifiable, Codable, Equatable {
+    let id: String
+    let name: String
+    let nameLocal: String
+    let area: String
+    let neighborhood: String
+    let address: String
+    let latitude: Double
+    let longitude: Double
+    let rating: Double      // Google Maps rating (1-5)
+    let reviewCount: Int
+    let starRating: Int     // Hotel star rating (1-5)
+    let priceLevel: Int     // 1-5 ($ to $$$$$)
+    let amenities: [String]
+
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+
+    var formattedRating: String {
+        String(format: "%.1f", rating)
+    }
+
+    var starDisplay: String {
+        String(repeating: "★", count: starRating)
+    }
+
+    var priceLevelDisplay: String {
+        String(repeating: "$", count: priceLevel)
+    }
+
+    var ratingDescription: String {
+        switch rating {
+        case 4.5...: return "Excellent"
+        case 4.0..<4.5: return "Very Good"
+        case 3.5..<4.0: return "Good"
+        default: return "Fair"
         }
     }
 }
 
-// MARK: - Errors
+// MARK: - Hotel Search Result
 
-enum HotelSearchError: LocalizedError {
-    case hotelNotFound
-    case notConfigured
-    case networkError(Error)
-    case invalidResponse
+struct HotelSearchResult: Identifiable, Equatable {
+    let id: String
+    let hotel: Hotel
+    let distanceKm: Double
+    let bookingLinks: [BookingLink]
 
-    var errorDescription: String? {
+    var formattedDistance: String {
+        if distanceKm < 1 {
+            return "\(Int(distanceKm * 1000)) m"
+        }
+        return String(format: "%.1f km", distanceKm)
+    }
+
+    static func == (lhs: HotelSearchResult, rhs: HotelSearchResult) -> Bool {
+        lhs.id == rhs.id
+    }
+}
+
+// MARK: - Booking Link
+
+struct BookingLink: Identifiable, Equatable {
+    let id = UUID()
+    let provider: BookingProvider
+    let url: String
+    let label: String
+}
+
+enum BookingProvider: String, CaseIterable {
+    case googleMaps = "google_maps"
+    case booking = "booking"
+    case agoda = "agoda"
+    case expedia = "expedia"
+    case trip = "trip"
+
+    var displayName: String {
         switch self {
-        case .hotelNotFound:
-            return "Hotel not found"
-        case .notConfigured:
-            return "Hotel API not configured. Please set up API credentials."
-        case .networkError(let error):
-            return "Network error: \(error.localizedDescription)"
-        case .invalidResponse:
-            return "Invalid response from server"
+        case .googleMaps: return "Google Maps"
+        case .booking: return "Booking.com"
+        case .agoda: return "Agoda"
+        case .expedia: return "Expedia"
+        case .trip: return "Trip.com"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .googleMaps: return "map.fill"
+        case .booking: return "b.circle.fill"
+        case .agoda: return "a.circle.fill"
+        case .expedia: return "e.circle.fill"
+        case .trip: return "t.circle.fill"
+        }
+    }
+
+    var color: String {
+        switch self {
+        case .googleMaps: return "green"
+        case .booking: return "blue"
+        case .agoda: return "red"
+        case .expedia: return "yellow"
+        case .trip: return "blue"
+        }
+    }
+}
+
+// MARK: - Sort Option
+
+enum HotelSortOption: String, CaseIterable, Identifiable {
+    case rating = "rating"
+    case distance = "distance"
+    case ratingCount = "reviews"
+    case priceEstimate = "price"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .rating: return "Rating"
+        case .distance: return "Distance"
+        case .ratingCount: return "Most Reviews"
+        case .priceEstimate: return "Price (Low to High)"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .rating: return "star.fill"
+        case .distance: return "location.fill"
+        case .ratingCount: return "text.bubble.fill"
+        case .priceEstimate: return "dollarsign.circle.fill"
         }
     }
 }
