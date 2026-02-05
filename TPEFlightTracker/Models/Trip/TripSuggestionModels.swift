@@ -145,6 +145,11 @@ struct SuggestedDestination: Identifiable, Codable, Equatable {
     let order: Int
     let suggestedTravelMode: TravelMode
 
+    // Attraction links
+    let ticketURL: String?          // URL to purchase tickets (KKday, Klook, official site)
+    let officialWebsiteURL: String? // Official website of the attraction
+    let requiresTicket: Bool        // Whether tickets are required for entry
+
     init(
         id: UUID = UUID(),
         name: String,
@@ -156,7 +161,10 @@ struct SuggestedDestination: Identifiable, Codable, Equatable {
         tips: [String] = [],
         estimatedTimeMinutes: Int = 60,
         order: Int = 0,
-        suggestedTravelMode: TravelMode = .transit
+        suggestedTravelMode: TravelMode = .transit,
+        ticketURL: String? = nil,
+        officialWebsiteURL: String? = nil,
+        requiresTicket: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -169,6 +177,9 @@ struct SuggestedDestination: Identifiable, Codable, Equatable {
         self.estimatedTimeMinutes = estimatedTimeMinutes
         self.order = order
         self.suggestedTravelMode = suggestedTravelMode
+        self.ticketURL = ticketURL
+        self.officialWebsiteURL = officialWebsiteURL
+        self.requiresTicket = requiresTicket
     }
 
     var coordinate: CLLocationCoordinate2D {
@@ -187,6 +198,45 @@ struct SuggestedDestination: Identifiable, Codable, Equatable {
         }
     }
 
+    /// Get the best available link for this destination
+    var bestAvailableURL: URL? {
+        if requiresTicket, let ticketURLString = ticketURL, let url = URL(string: ticketURLString) {
+            return url
+        }
+        if let websiteURLString = officialWebsiteURL, let url = URL(string: websiteURLString) {
+            return url
+        }
+        return googleMapsURL
+    }
+
+    /// Get Google Maps URL for this location
+    var googleMapsURL: URL? {
+        let encodedName = name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        return URL(string: "https://www.google.com/maps/search/?api=1&query=\(latitude),\(longitude)&query_place_id=\(encodedName)")
+    }
+
+    /// Label for the primary action button
+    var primaryLinkLabel: String {
+        if requiresTicket && ticketURL != nil {
+            return "Buy Tickets"
+        } else if officialWebsiteURL != nil {
+            return "Official Website"
+        } else {
+            return "View on Map"
+        }
+    }
+
+    /// Icon for the primary action button
+    var primaryLinkIcon: String {
+        if requiresTicket && ticketURL != nil {
+            return "ticket.fill"
+        } else if officialWebsiteURL != nil {
+            return "globe"
+        } else {
+            return "map.fill"
+        }
+    }
+
     /// Convert to TripDestination for adding to user's trip
     func toTripDestination() -> TripDestination {
         TripDestination(
@@ -198,7 +248,10 @@ struct SuggestedDestination: Identifiable, Codable, Equatable {
             order: order,
             estimatedStayMinutes: estimatedTimeMinutes,
             tips: tips,
-            travelMode: suggestedTravelMode
+            travelMode: suggestedTravelMode,
+            ticketURL: ticketURL,
+            officialWebsiteURL: officialWebsiteURL,
+            requiresTicket: requiresTicket
         )
     }
 }

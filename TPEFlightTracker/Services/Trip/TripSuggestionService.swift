@@ -257,7 +257,10 @@ class TripSuggestionService: TripSuggestionServiceProtocol {
                         tips: ["Book tickets online to skip the queue", "Visit at sunset for amazing photos"],
                         estimatedTimeMinutes: 120,
                         order: 0,
-                        suggestedTravelMode: .transit
+                        suggestedTravelMode: .transit,
+                        ticketURL: "https://www.taipei-101.com.tw/en/observatory-ticket/",
+                        officialWebsiteURL: "https://www.taipei-101.com.tw/en/",
+                        requiresTicket: true
                     ),
                     SuggestedDestination(
                         name: "Longshan Temple",
@@ -269,7 +272,8 @@ class TripSuggestionService: TripSuggestionServiceProtocol {
                         tips: ["Free entry", "Visit early morning for peace"],
                         estimatedTimeMinutes: 60,
                         order: 1,
-                        suggestedTravelMode: .transit
+                        suggestedTravelMode: .transit,
+                        officialWebsiteURL: "https://www.lungshan.org.tw/"
                     ),
                     SuggestedDestination(
                         name: "Chiang Kai-shek Memorial Hall",
@@ -281,7 +285,8 @@ class TripSuggestionService: TripSuggestionServiceProtocol {
                         tips: ["Watch guard changing on the hour", "Free admission"],
                         estimatedTimeMinutes: 90,
                         order: 2,
-                        suggestedTravelMode: .transit
+                        suggestedTravelMode: .transit,
+                        officialWebsiteURL: "https://www.cksmh.gov.tw/en/"
                     ),
                     SuggestedDestination(
                         name: "Shilin Night Market",
@@ -293,7 +298,8 @@ class TripSuggestionService: TripSuggestionServiceProtocol {
                         tips: ["Try oyster omelette and bubble tea", "Best after 6 PM"],
                         estimatedTimeMinutes: 150,
                         order: 3,
-                        suggestedTravelMode: .transit
+                        suggestedTravelMode: .transit,
+                        officialWebsiteURL: "https://www.travel.taipei/en/attraction/details/1538"
                     )
                 ],
                 highlights: ["Taipei 101 Observatory", "Temple Culture", "Night Market"],
@@ -318,12 +324,12 @@ class TripSuggestionService: TripSuggestionServiceProtocol {
                 category: .firstTime,
                 duration: .threeDays,
                 destinations: [
-                    SuggestedDestination(name: "Taipei 101", nameLocal: "台北101", address: "Xinyi District", latitude: 25.0339, longitude: 121.5645, description: "Start at the iconic skyscraper.", tips: ["Pre-book tickets"], estimatedTimeMinutes: 120, order: 0, suggestedTravelMode: .transit),
-                    SuggestedDestination(name: "Elephant Mountain", nameLocal: "象山", address: "Xinyi District", latitude: 25.0273, longitude: 121.5708, description: "Best photo spot of Taipei 101.", tips: ["20-minute climb", "Go for sunset"], estimatedTimeMinutes: 90, order: 1, suggestedTravelMode: .walking),
-                    SuggestedDestination(name: "Raohe Night Market", nameLocal: "饒河夜市", address: "Songshan District", latitude: 25.0510, longitude: 121.5775, description: "Famous for pepper pork buns.", tips: ["Try the pork bun at entrance"], estimatedTimeMinutes: 120, order: 2, suggestedTravelMode: .transit),
-                    SuggestedDestination(name: "National Palace Museum", nameLocal: "國立故宮博物院", address: "Shilin District", latitude: 25.1024, longitude: 121.5485, description: "World's largest Chinese art collection.", tips: ["Book online", "Don't miss Jade Cabbage"], estimatedTimeMinutes: 180, order: 3, suggestedTravelMode: .transit),
-                    SuggestedDestination(name: "Beitou Hot Springs", nameLocal: "北投溫泉", address: "Beitou District", latitude: 25.1365, longitude: 121.5068, description: "Famous hot spring area.", tips: ["Visit Thermal Valley (free)"], estimatedTimeMinutes: 150, order: 4, suggestedTravelMode: .transit),
-                    SuggestedDestination(name: "Jiufen Old Street", nameLocal: "九份老街", address: "New Taipei City", latitude: 25.1094, longitude: 121.8444, description: "Charming village that inspired Spirited Away.", tips: ["Go early", "Stay for sunset lanterns"], estimatedTimeMinutes: 180, order: 5, suggestedTravelMode: .transit)
+                    SuggestedDestination(name: "Taipei 101", nameLocal: "台北101", address: "Xinyi District", latitude: 25.0339, longitude: 121.5645, description: "Start at the iconic skyscraper.", tips: ["Pre-book tickets"], estimatedTimeMinutes: 120, order: 0, suggestedTravelMode: .transit, ticketURL: "https://www.taipei-101.com.tw/en/observatory-ticket/", officialWebsiteURL: "https://www.taipei-101.com.tw/en/", requiresTicket: true),
+                    SuggestedDestination(name: "Elephant Mountain", nameLocal: "象山", address: "Xinyi District", latitude: 25.0273, longitude: 121.5708, description: "Best photo spot of Taipei 101.", tips: ["20-minute climb", "Go for sunset"], estimatedTimeMinutes: 90, order: 1, suggestedTravelMode: .walking, officialWebsiteURL: "https://www.travel.taipei/en/attraction/details/189"),
+                    SuggestedDestination(name: "Raohe Night Market", nameLocal: "饒河夜市", address: "Songshan District", latitude: 25.0510, longitude: 121.5775, description: "Famous for pepper pork buns.", tips: ["Try the pork bun at entrance"], estimatedTimeMinutes: 120, order: 2, suggestedTravelMode: .transit, officialWebsiteURL: "https://www.travel.taipei/en/attraction/details/1543"),
+                    SuggestedDestination(name: "National Palace Museum", nameLocal: "國立故宮博物院", address: "Shilin District", latitude: 25.1024, longitude: 121.5485, description: "World's largest Chinese art collection.", tips: ["Book online", "Don't miss Jade Cabbage"], estimatedTimeMinutes: 180, order: 3, suggestedTravelMode: .transit, ticketURL: "https://www.npm.gov.tw/en/Article.aspx?sNo=02000025", officialWebsiteURL: "https://www.npm.gov.tw/en/", requiresTicket: true),
+                    SuggestedDestination(name: "Beitou Hot Springs", nameLocal: "北投溫泉", address: "Beitou District", latitude: 25.1365, longitude: 121.5068, description: "Famous hot spring area.", tips: ["Visit Thermal Valley (free)"], estimatedTimeMinutes: 150, order: 4, suggestedTravelMode: .transit, officialWebsiteURL: "https://www.travel.taipei/en/attraction/details/40"),
+                    SuggestedDestination(name: "Jiufen Old Street", nameLocal: "九份老街", address: "New Taipei City", latitude: 25.1094, longitude: 121.8444, description: "Charming village that inspired Spirited Away.", tips: ["Go early", "Stay for sunset lanterns"], estimatedTimeMinutes: 180, order: 5, suggestedTravelMode: .transit, officialWebsiteURL: "https://www.newtaipei.travel/en/attraction/detail/110305")
                 ],
                 highlights: ["Taipei 101", "Palace Museum", "Hot Springs", "Jiufen"],
                 bestTime: "Start each day in the morning",
@@ -347,10 +353,10 @@ class TripSuggestionService: TripSuggestionServiceProtocol {
                 category: .cultural,
                 duration: .fullDay,
                 destinations: [
-                    SuggestedDestination(name: "Longshan Temple", nameLocal: "龍山寺", address: "Wanhua District", latitude: 25.0372, longitude: 121.4999, description: "One of Taiwan's oldest temples.", tips: ["Arrive early"], estimatedTimeMinutes: 60, order: 0, suggestedTravelMode: .transit),
-                    SuggestedDestination(name: "Bopiliao Historic Block", nameLocal: "剝皮寮", address: "Wanhua District", latitude: 25.0374, longitude: 121.5020, description: "Preserved Qing Dynasty street.", tips: ["Free admission"], estimatedTimeMinutes: 45, order: 1, suggestedTravelMode: .walking),
-                    SuggestedDestination(name: "Confucius Temple", nameLocal: "台北孔廟", address: "Datong District", latitude: 25.0727, longitude: 121.5160, description: "Peaceful temple for the philosopher.", tips: ["Beautiful architecture"], estimatedTimeMinutes: 45, order: 2, suggestedTravelMode: .transit),
-                    SuggestedDestination(name: "Baoan Temple", nameLocal: "保安宮", address: "Datong District", latitude: 25.0731, longitude: 121.5157, description: "UNESCO Heritage Award winner.", tips: ["Adjacent to Confucius Temple"], estimatedTimeMinutes: 45, order: 3, suggestedTravelMode: .walking)
+                    SuggestedDestination(name: "Longshan Temple", nameLocal: "龍山寺", address: "Wanhua District", latitude: 25.0372, longitude: 121.4999, description: "One of Taiwan's oldest temples.", tips: ["Arrive early"], estimatedTimeMinutes: 60, order: 0, suggestedTravelMode: .transit, officialWebsiteURL: "https://www.lungshan.org.tw/"),
+                    SuggestedDestination(name: "Bopiliao Historic Block", nameLocal: "剝皮寮", address: "Wanhua District", latitude: 25.0374, longitude: 121.5020, description: "Preserved Qing Dynasty street.", tips: ["Free admission"], estimatedTimeMinutes: 45, order: 1, suggestedTravelMode: .walking, officialWebsiteURL: "https://www.bopiliao.taipei/"),
+                    SuggestedDestination(name: "Confucius Temple", nameLocal: "台北孔廟", address: "Datong District", latitude: 25.0727, longitude: 121.5160, description: "Peaceful temple for the philosopher.", tips: ["Beautiful architecture"], estimatedTimeMinutes: 45, order: 2, suggestedTravelMode: .transit, officialWebsiteURL: "https://www.ct.taipei.gov.tw/en/"),
+                    SuggestedDestination(name: "Baoan Temple", nameLocal: "保安宮", address: "Datong District", latitude: 25.0731, longitude: 121.5157, description: "UNESCO Heritage Award winner.", tips: ["Adjacent to Confucius Temple"], estimatedTimeMinutes: 45, order: 3, suggestedTravelMode: .walking, officialWebsiteURL: "https://www.baoan.org.tw/en/")
                 ],
                 highlights: ["Ancient Temples", "Traditional Architecture"],
                 bestTime: "Morning to early afternoon",
@@ -418,9 +424,9 @@ class TripSuggestionService: TripSuggestionServiceProtocol {
                 category: .nature,
                 duration: .fullDay,
                 destinations: [
-                    SuggestedDestination(name: "Xiaoyoukeng", nameLocal: "小油坑", address: "Yangmingshan National Park", latitude: 25.1758, longitude: 121.5443, description: "Volcanic fumaroles.", tips: ["Strong sulfur smell"], estimatedTimeMinutes: 45, order: 0, suggestedTravelMode: .transit),
-                    SuggestedDestination(name: "Qingtiangang Grassland", nameLocal: "擎天崗", address: "Yangmingshan", latitude: 25.1699, longitude: 121.5625, description: "Grassland with water buffalo.", tips: ["Keep distance from buffalo"], estimatedTimeMinutes: 90, order: 1, suggestedTravelMode: .transit),
-                    SuggestedDestination(name: "Lengshuikeng Hot Spring", nameLocal: "冷水坑溫泉", address: "Yangmingshan", latitude: 25.1679, longitude: 121.5660, description: "Free public foot bath.", tips: ["Bring a towel"], estimatedTimeMinutes: 60, order: 2, suggestedTravelMode: .walking)
+                    SuggestedDestination(name: "Xiaoyoukeng", nameLocal: "小油坑", address: "Yangmingshan National Park", latitude: 25.1758, longitude: 121.5443, description: "Volcanic fumaroles.", tips: ["Strong sulfur smell"], estimatedTimeMinutes: 45, order: 0, suggestedTravelMode: .transit, officialWebsiteURL: "https://www.ymsnp.gov.tw/main_en/"),
+                    SuggestedDestination(name: "Qingtiangang Grassland", nameLocal: "擎天崗", address: "Yangmingshan", latitude: 25.1699, longitude: 121.5625, description: "Grassland with water buffalo.", tips: ["Keep distance from buffalo"], estimatedTimeMinutes: 90, order: 1, suggestedTravelMode: .transit, officialWebsiteURL: "https://www.ymsnp.gov.tw/main_en/"),
+                    SuggestedDestination(name: "Lengshuikeng Hot Spring", nameLocal: "冷水坑溫泉", address: "Yangmingshan", latitude: 25.1679, longitude: 121.5660, description: "Free public foot bath.", tips: ["Bring a towel"], estimatedTimeMinutes: 60, order: 2, suggestedTravelMode: .walking, officialWebsiteURL: "https://www.ymsnp.gov.tw/main_en/")
                 ],
                 highlights: ["Volcanic Landscape", "Grassland", "Hot Spring"],
                 bestTime: "Morning to afternoon",
@@ -438,10 +444,10 @@ class TripSuggestionService: TripSuggestionServiceProtocol {
                 category: .nature,
                 duration: .fullDay,
                 destinations: [
-                    SuggestedDestination(name: "Taroko Visitor Center", nameLocal: "太魯閣遊客中心", address: "Hualien", latitude: 24.1588, longitude: 121.6218, description: "Start here for maps.", tips: ["Check trail conditions"], estimatedTimeMinutes: 30, order: 0, suggestedTravelMode: .driving),
-                    SuggestedDestination(name: "Swallow Grotto", nameLocal: "燕子口", address: "Taroko", latitude: 24.1738, longitude: 121.5048, description: "Trail through marble cliffs.", tips: ["Wear helmet provided"], estimatedTimeMinutes: 60, order: 1, suggestedTravelMode: .driving),
-                    SuggestedDestination(name: "Eternal Spring Shrine", nameLocal: "長春祠", address: "Taroko", latitude: 24.1683, longitude: 121.6033, description: "Shrine with waterfall.", tips: ["Stunning photo spot"], estimatedTimeMinutes: 45, order: 2, suggestedTravelMode: .driving),
-                    SuggestedDestination(name: "Shakadang Trail", nameLocal: "砂卡礑步道", address: "Taroko", latitude: 24.1570, longitude: 121.6154, description: "Trail with turquoise water.", tips: ["4km easy trail"], estimatedTimeMinutes: 120, order: 3, suggestedTravelMode: .driving)
+                    SuggestedDestination(name: "Taroko Visitor Center", nameLocal: "太魯閣遊客中心", address: "Hualien", latitude: 24.1588, longitude: 121.6218, description: "Start here for maps.", tips: ["Check trail conditions"], estimatedTimeMinutes: 30, order: 0, suggestedTravelMode: .driving, officialWebsiteURL: "https://www.taroko.gov.tw/en/"),
+                    SuggestedDestination(name: "Swallow Grotto", nameLocal: "燕子口", address: "Taroko", latitude: 24.1738, longitude: 121.5048, description: "Trail through marble cliffs.", tips: ["Wear helmet provided"], estimatedTimeMinutes: 60, order: 1, suggestedTravelMode: .driving, officialWebsiteURL: "https://www.taroko.gov.tw/en/"),
+                    SuggestedDestination(name: "Eternal Spring Shrine", nameLocal: "長春祠", address: "Taroko", latitude: 24.1683, longitude: 121.6033, description: "Shrine with waterfall.", tips: ["Stunning photo spot"], estimatedTimeMinutes: 45, order: 2, suggestedTravelMode: .driving, officialWebsiteURL: "https://www.taroko.gov.tw/en/"),
+                    SuggestedDestination(name: "Shakadang Trail", nameLocal: "砂卡礑步道", address: "Taroko", latitude: 24.1570, longitude: 121.6154, description: "Trail with turquoise water.", tips: ["4km easy trail"], estimatedTimeMinutes: 120, order: 3, suggestedTravelMode: .driving, officialWebsiteURL: "https://www.taroko.gov.tw/en/")
                 ],
                 highlights: ["Marble Gorge", "Mountain Scenery"],
                 bestTime: "Full day, start early",
@@ -491,9 +497,9 @@ class TripSuggestionService: TripSuggestionServiceProtocol {
                 category: .trending,
                 duration: .fullDay,
                 destinations: [
-                    SuggestedDestination(name: "Huashan 1914", nameLocal: "華山1914", address: "Zhongzheng District", latitude: 25.0437, longitude: 121.5285, description: "Renovated winery turned creative hub.", tips: ["Great cafes", "Check for events"], estimatedTimeMinutes: 90, order: 0, suggestedTravelMode: .transit),
-                    SuggestedDestination(name: "Songshan Cultural Park", nameLocal: "松山文創園區", address: "Xinyi District", latitude: 25.0436, longitude: 121.5600, description: "Former tobacco factory, now art space.", tips: ["Japanese-era architecture"], estimatedTimeMinutes: 90, order: 1, suggestedTravelMode: .transit),
-                    SuggestedDestination(name: "Dadaocheng Wharf", nameLocal: "大稀埕碼頭", address: "Datong District", latitude: 25.0591, longitude: 121.5064, description: "Perfect for sunset photos.", tips: ["Golden hour is magical"], estimatedTimeMinutes: 60, order: 2, suggestedTravelMode: .transit)
+                    SuggestedDestination(name: "Huashan 1914", nameLocal: "華山1914", address: "Zhongzheng District", latitude: 25.0437, longitude: 121.5285, description: "Renovated winery turned creative hub.", tips: ["Great cafes", "Check for events"], estimatedTimeMinutes: 90, order: 0, suggestedTravelMode: .transit, officialWebsiteURL: "https://www.huashan1914.com/w/huashan1914en/"),
+                    SuggestedDestination(name: "Songshan Cultural Park", nameLocal: "松山文創園區", address: "Xinyi District", latitude: 25.0436, longitude: 121.5600, description: "Former tobacco factory, now art space.", tips: ["Japanese-era architecture"], estimatedTimeMinutes: 90, order: 1, suggestedTravelMode: .transit, officialWebsiteURL: "https://www.songshanculturalpark.org/en/"),
+                    SuggestedDestination(name: "Dadaocheng Wharf", nameLocal: "大稀埕碼頭", address: "Datong District", latitude: 25.0591, longitude: 121.5064, description: "Perfect for sunset photos.", tips: ["Golden hour is magical"], estimatedTimeMinutes: 60, order: 2, suggestedTravelMode: .transit, officialWebsiteURL: "https://www.travel.taipei/en/attraction/details/1537")
                 ],
                 highlights: ["Photo Spots", "Creative Parks", "Sunset Views"],
                 bestTime: "Afternoon for golden hour",
@@ -554,8 +560,8 @@ class TripSuggestionService: TripSuggestionServiceProtocol {
                 category: .trending,
                 duration: .halfDay,
                 destinations: [
-                    SuggestedDestination(name: "Jiufen Old Street", nameLocal: "九份老街", address: "Ruifang District", latitude: 25.1094, longitude: 121.8444, description: "Spirited Away inspiration.", tips: ["Arrive at 4 PM for golden hour", "Stay until dark for lanterns"], estimatedTimeMinutes: 180, order: 0, suggestedTravelMode: .transit),
-                    SuggestedDestination(name: "A-Mei Tea House", nameLocal: "阿妹茶樓", address: "Jiufen", latitude: 25.1096, longitude: 121.8452, description: "The iconic tea house.", tips: ["Most photographed building", "Book ahead for tea ceremony"], estimatedTimeMinutes: 60, order: 1, suggestedTravelMode: .walking)
+                    SuggestedDestination(name: "Jiufen Old Street", nameLocal: "九份老街", address: "Ruifang District", latitude: 25.1094, longitude: 121.8444, description: "Spirited Away inspiration.", tips: ["Arrive at 4 PM for golden hour", "Stay until dark for lanterns"], estimatedTimeMinutes: 180, order: 0, suggestedTravelMode: .transit, officialWebsiteURL: "https://www.newtaipei.travel/en/attraction/detail/110305"),
+                    SuggestedDestination(name: "A-Mei Tea House", nameLocal: "阿妹茶樓", address: "Jiufen", latitude: 25.1096, longitude: 121.8452, description: "The iconic tea house.", tips: ["Most photographed building", "Book ahead for tea ceremony"], estimatedTimeMinutes: 60, order: 1, suggestedTravelMode: .walking, officialWebsiteURL: "https://www.amei-teahouse.com/")
                 ],
                 highlights: ["Lantern Streets", "Tea Houses", "Mountain Views"],
                 bestTime: "Arrive 4 PM, stay until night",
@@ -572,8 +578,8 @@ class TripSuggestionService: TripSuggestionServiceProtocol {
                 category: .trending,
                 duration: .halfDay,
                 destinations: [
-                    SuggestedDestination(name: "Ximending", nameLocal: "西門町", address: "Wanhua District", latitude: 25.0421, longitude: 121.5081, description: "Youth culture hub.", tips: ["K-pop stores everywhere", "Street performers on weekends"], estimatedTimeMinutes: 150, order: 0, suggestedTravelMode: .transit),
-                    SuggestedDestination(name: "Red House", nameLocal: "西門紅樓", address: "Wanhua District", latitude: 25.0420, longitude: 121.5066, description: "Historic building with creative market.", tips: ["LGBTQ+ friendly area", "Weekend craft market"], estimatedTimeMinutes: 60, order: 1, suggestedTravelMode: .walking)
+                    SuggestedDestination(name: "Ximending", nameLocal: "西門町", address: "Wanhua District", latitude: 25.0421, longitude: 121.5081, description: "Youth culture hub.", tips: ["K-pop stores everywhere", "Street performers on weekends"], estimatedTimeMinutes: 150, order: 0, suggestedTravelMode: .transit, officialWebsiteURL: "https://www.travel.taipei/en/attraction/details/1548"),
+                    SuggestedDestination(name: "Red House", nameLocal: "西門紅樓", address: "Wanhua District", latitude: 25.0420, longitude: 121.5066, description: "Historic building with creative market.", tips: ["LGBTQ+ friendly area", "Weekend craft market"], estimatedTimeMinutes: 60, order: 1, suggestedTravelMode: .walking, officialWebsiteURL: "https://www.redhouse.taipei/en/")
                 ],
                 highlights: ["K-pop Shopping", "Street Fashion", "Youth Culture"],
                 bestTime: "Afternoon to evening",
@@ -615,9 +621,9 @@ class TripSuggestionService: TripSuggestionServiceProtocol {
                 category: .familyFriendly,
                 duration: .fullDay,
                 destinations: [
-                    SuggestedDestination(name: "Taipei Zoo", nameLocal: "台北市立動物園", address: "Wenshan District", latitude: 24.9987, longitude: 121.5809, description: "Asia's largest zoo with pandas.", tips: ["See giant pandas", "Take the zoo train"], estimatedTimeMinutes: 180, order: 0, suggestedTravelMode: .transit),
-                    SuggestedDestination(name: "Maokong Gondola", nameLocal: "貓空纜車", address: "Wenshan District", latitude: 24.9983, longitude: 121.5762, description: "Scenic cable car ride.", tips: ["Try crystal cabin (glass floor)"], estimatedTimeMinutes: 120, order: 1, suggestedTravelMode: .walking),
-                    SuggestedDestination(name: "Children's Amusement Park", nameLocal: "兒童新樂園", address: "Shilin District", latitude: 25.0969, longitude: 121.5165, description: "Modern amusement park.", tips: ["Affordable rides", "Best for ages 3-12"], estimatedTimeMinutes: 180, order: 2, suggestedTravelMode: .transit)
+                    SuggestedDestination(name: "Taipei Zoo", nameLocal: "台北市立動物園", address: "Wenshan District", latitude: 24.9987, longitude: 121.5809, description: "Asia's largest zoo with pandas.", tips: ["See giant pandas", "Take the zoo train"], estimatedTimeMinutes: 180, order: 0, suggestedTravelMode: .transit, ticketURL: "https://www.zoo.gov.taipei/en/", officialWebsiteURL: "https://www.zoo.gov.taipei/en/", requiresTicket: true),
+                    SuggestedDestination(name: "Maokong Gondola", nameLocal: "貓空纜車", address: "Wenshan District", latitude: 24.9983, longitude: 121.5762, description: "Scenic cable car ride.", tips: ["Try crystal cabin (glass floor)"], estimatedTimeMinutes: 120, order: 1, suggestedTravelMode: .walking, ticketURL: "https://www.gondola.taipei/en/", officialWebsiteURL: "https://www.gondola.taipei/en/", requiresTicket: true),
+                    SuggestedDestination(name: "Children's Amusement Park", nameLocal: "兒童新樂園", address: "Shilin District", latitude: 25.0969, longitude: 121.5165, description: "Modern amusement park.", tips: ["Affordable rides", "Best for ages 3-12"], estimatedTimeMinutes: 180, order: 2, suggestedTravelMode: .transit, ticketURL: "https://www.tcap.taipei/en/", officialWebsiteURL: "https://www.tcap.taipei/en/", requiresTicket: true)
                 ],
                 highlights: ["Taipei Zoo", "Gondola Ride", "Amusement Park"],
                 bestTime: "Start morning, full day",

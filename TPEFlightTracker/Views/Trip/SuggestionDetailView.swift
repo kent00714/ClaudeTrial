@@ -504,6 +504,22 @@ struct DestinationRow: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
+                // Link button
+                if let url = destination.bestAvailableURL {
+                    Link(destination: url) {
+                        HStack(spacing: 4) {
+                            Image(systemName: destination.primaryLinkIcon)
+                            Text(destination.primaryLinkLabel)
+                        }
+                        .font(.caption)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(destination.requiresTicket ? Color.green.opacity(0.15) : Color.blue.opacity(0.1))
+                        .foregroundStyle(destination.requiresTicket ? .green : .blue)
+                        .clipShape(Capsule())
+                    }
+                }
+
                 // Tips preview
                 if let firstTip = destination.tips.first {
                     HStack(alignment: .top, spacing: 4) {
@@ -618,19 +634,51 @@ struct DestinationDetailSheet: View {
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
 
-                    // Open in Maps Button
-                    Button {
-                        openInMaps()
-                    } label: {
-                        HStack {
-                            Image(systemName: "map.fill")
-                            Text("Open in Maps")
+                    // Action Buttons
+                    VStack(spacing: 12) {
+                        // Ticket / Website Link
+                        if destination.requiresTicket, let ticketURL = destination.ticketURL, let url = URL(string: ticketURL) {
+                            Link(destination: url) {
+                                HStack {
+                                    Image(systemName: "ticket.fill")
+                                    Text("Buy Tickets")
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.green)
+                                .foregroundStyle(.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundStyle(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                        if let websiteURL = destination.officialWebsiteURL, let url = URL(string: websiteURL) {
+                            Link(destination: url) {
+                                HStack {
+                                    Image(systemName: "globe")
+                                    Text("Official Website")
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(destination.requiresTicket ? Color.blue.opacity(0.15) : Color.blue)
+                                .foregroundStyle(destination.requiresTicket ? .blue : .white)
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                            }
+                        }
+
+                        // Open in Maps Button
+                        Button {
+                            openInMaps()
+                        } label: {
+                            HStack {
+                                Image(systemName: "map.fill")
+                                Text("Open in Maps")
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(destination.requiresTicket || destination.officialWebsiteURL != nil ? Color.gray.opacity(0.2) : Color.blue)
+                            .foregroundStyle(destination.requiresTicket || destination.officialWebsiteURL != nil ? .primary : .white)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
                     }
                 }
                 .padding()

@@ -417,6 +417,22 @@ struct DestinationRowView: View {
                         .background(Color.yellow.opacity(0.1))
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                     }
+
+                    // Link button (ticket/website/map)
+                    if let url = destination.bestAvailableURL {
+                        Link(destination: url) {
+                            HStack(spacing: 4) {
+                                Image(systemName: destination.primaryLinkIcon)
+                                Text(destination.primaryLinkLabel)
+                            }
+                            .font(.caption2)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(destination.requiresTicket ? Color.green.opacity(0.15) : Color.blue.opacity(0.1))
+                            .foregroundStyle(destination.requiresTicket ? .green : .blue)
+                            .clipShape(Capsule())
+                        }
+                    }
                 }
 
                 Spacer()

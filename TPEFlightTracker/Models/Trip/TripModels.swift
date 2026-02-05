@@ -96,6 +96,11 @@ struct TripDestination: Identifiable, Codable, Equatable {
     var travelDistanceMeters: Int?
     var travelMode: TravelMode
 
+    // Attraction links
+    var ticketURL: String?          // URL to purchase tickets (if required)
+    var officialWebsiteURL: String? // Official website of the attraction
+    var requiresTicket: Bool        // Whether tickets are required
+
     init(
         id: UUID = UUID(),
         name: String,
@@ -110,7 +115,10 @@ struct TripDestination: Identifiable, Codable, Equatable {
         tips: [String] = [],
         travelDurationMinutes: Int? = nil,
         travelDistanceMeters: Int? = nil,
-        travelMode: TravelMode = .driving
+        travelMode: TravelMode = .driving,
+        ticketURL: String? = nil,
+        officialWebsiteURL: String? = nil,
+        requiresTicket: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -126,6 +134,9 @@ struct TripDestination: Identifiable, Codable, Equatable {
         self.travelDurationMinutes = travelDurationMinutes
         self.travelDistanceMeters = travelDistanceMeters
         self.travelMode = travelMode
+        self.ticketURL = ticketURL
+        self.officialWebsiteURL = officialWebsiteURL
+        self.requiresTicket = requiresTicket
     }
 
     var formattedEstimatedStay: String? {
@@ -163,6 +174,47 @@ struct TripDestination: Identifiable, Codable, Equatable {
             return "\(hours)h \(mins)m"
         } else {
             return "\(mins) min"
+        }
+    }
+
+    /// Get the best available link for this destination
+    var bestAvailableURL: URL? {
+        // Priority: ticket URL (if requires ticket) > official website > Google Maps
+        if requiresTicket, let ticketURLString = ticketURL, let url = URL(string: ticketURLString) {
+            return url
+        }
+        if let websiteURLString = officialWebsiteURL, let url = URL(string: websiteURLString) {
+            return url
+        }
+        return googleMapsURL
+    }
+
+    /// Get Google Maps URL for this location
+    var googleMapsURL: URL? {
+        let encodedName = name.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let urlString = "https://www.google.com/maps/search/?api=1&query=\(latitude),\(longitude)&query_place_id=\(encodedName)"
+        return URL(string: urlString)
+    }
+
+    /// Label for the primary action button
+    var primaryLinkLabel: String {
+        if requiresTicket && ticketURL != nil {
+            return "Buy Tickets"
+        } else if officialWebsiteURL != nil {
+            return "Official Website"
+        } else {
+            return "View on Map"
+        }
+    }
+
+    /// System image for the primary action button
+    var primaryLinkIcon: String {
+        if requiresTicket && ticketURL != nil {
+            return "ticket.fill"
+        } else if officialWebsiteURL != nil {
+            return "globe"
+        } else {
+            return "map.fill"
         }
     }
 }
