@@ -170,6 +170,73 @@ struct TripDestination: Identifiable, Codable, Equatable {
 // MARK: - Trip Sharing Extensions
 
 extension Trip {
+    /// URL scheme for deep linking
+    static let urlScheme = "tpetracker"
+
+    /// Generate a shareable deep link URL for this trip
+    var shareableLink: URL? {
+        do {
+            let encoder = JSONEncoder()
+            encoder.dateEncodingStrategy = .iso8601
+            let jsonData = try encoder.encode(self)
+            let base64String = jsonData.base64EncodedString()
+
+            // URL-safe base64 encoding
+            let urlSafeBase64 = base64String
+                .replacingOccurrences(of: "+", with: "-")
+                .replacingOccurrences(of: "/", with: "_")
+                .replacingOccurrences(of: "=", with: "")
+
+            var components = URLComponents()
+            components.scheme = Trip.urlScheme
+            components.host = "trip"
+            components.queryItems = [URLQueryItem(name: "data", value: urlSafeBase64)]
+
+            return components.url
+        } catch {
+            return nil
+        }
+    }
+
+    /// Import trip from a shareable link URL
+    static func importFromLink(_ url: URL) throws -> Trip {
+        guard url.scheme == urlScheme,
+              url.host == "trip",
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let dataItem = components.queryItems?.first(where: { $0.name == "data" }),
+              let base64String = dataItem.value else {
+            throw TripImportError.invalidURL
+        }
+
+        // Convert URL-safe base64 back to standard
+        var standardBase64 = base64String
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+
+        // Add padding if needed
+        let paddingLength = (4 - standardBase64.count % 4) % 4
+        standardBase64 += String(repeating: "=", count: paddingLength)
+
+        guard let data = Data(base64Encoded: standardBase64) else {
+            throw TripImportError.invalidData
+        }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(Trip.self, from: data)
+    }
+
+    /// Generate shareable text with the trip link
+    var shareableTextWithLink: String {
+        var text = shareableText
+
+        if let link = shareableLink {
+            text += "\n\nOpen in TPE Flight Tracker:\n\(link.absoluteString)"
+        }
+
+        return text
+    }
+
     /// Generate a shareable text summary of the trip
     var shareableText: String {
         var text = "📍 \(name)\n"
@@ -248,6 +315,23 @@ extension Trip {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd"
         return "trip_\(sanitizedName)_\(formatter.string(from: startDate)).json"
+    }
+}
+
+enum TripImportError: Error, LocalizedError {
+    case invalidURL
+    case invalidData
+    case decodingFailed
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            return "The shared link is not valid."
+        case .invalidData:
+            return "Could not decode the trip data."
+        case .decodingFailed:
+            return "Failed to import the trip. The data may be corrupted."
+        }
     }
 }
 

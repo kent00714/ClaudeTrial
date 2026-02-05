@@ -307,4 +307,74 @@ final class TripModelTests: XCTestCase {
         let regularTrip = TripTestData.makeTrip()
         XCTAssertFalse(regularTrip.isFromSuggestion)
     }
+
+    // MARK: - Shareable Link Tests
+
+    func testShareableLinkGeneration() {
+        let trip = TripTestData.makeTrip(name: "Link Test Trip")
+        let link = trip.shareableLink
+
+        XCTAssertNotNil(link)
+        XCTAssertEqual(link?.scheme, "tpetracker")
+        XCTAssertEqual(link?.host, "trip")
+    }
+
+    func testShareableLinkRoundtrip() throws {
+        let original = TripTestData.makeTrip(
+            name: "Roundtrip Test",
+            notes: "Test notes for link",
+            sourceSuggestionName: "Test Source",
+            linkedFlightNumber: "CI123"
+        )
+
+        guard let link = original.shareableLink else {
+            XCTFail("Failed to generate shareable link")
+            return
+        }
+
+        let imported = try Trip.importFromLink(link)
+
+        XCTAssertEqual(imported.name, "Roundtrip Test")
+        XCTAssertEqual(imported.notes, "Test notes for link")
+        XCTAssertEqual(imported.sourceSuggestionName, "Test Source")
+        XCTAssertEqual(imported.linkedFlightNumber, "CI123")
+    }
+
+    func testShareableLinkWithDestinations() throws {
+        let trip = TripTestData.sampleTrip
+        guard let link = trip.shareableLink else {
+            XCTFail("Failed to generate shareable link")
+            return
+        }
+
+        let imported = try Trip.importFromLink(link)
+
+        XCTAssertEqual(imported.destinations.count, trip.destinations.count)
+        XCTAssertEqual(imported.destinations.first?.name, trip.destinations.first?.name)
+    }
+
+    func testImportFromInvalidLink() {
+        let invalidURL = URL(string: "tpetracker://trip?data=invalid_data")!
+
+        XCTAssertThrowsError(try Trip.importFromLink(invalidURL)) { error in
+            XCTAssertTrue(error is TripImportError)
+        }
+    }
+
+    func testImportFromWrongScheme() {
+        let wrongSchemeURL = URL(string: "https://example.com/trip?data=abc")!
+
+        XCTAssertThrowsError(try Trip.importFromLink(wrongSchemeURL)) { error in
+            XCTAssertTrue(error is TripImportError)
+        }
+    }
+
+    func testShareableTextWithLink() {
+        let trip = TripTestData.makeTrip(name: "Text With Link Test")
+        let text = trip.shareableTextWithLink
+
+        XCTAssertTrue(text.contains("Text With Link Test"))
+        XCTAssertTrue(text.contains("tpetracker://"))
+        XCTAssertTrue(text.contains("Open in TPE Flight Tracker"))
+    }
 }

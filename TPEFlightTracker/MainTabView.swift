@@ -4,6 +4,10 @@ struct MainTabView: View {
     @StateObject private var flightViewModel = FlightViewModel()
     @StateObject private var tripViewModel = TripViewModel()
     @State private var selectedTab = 0
+    @State private var showingImportSuccess = false
+    @State private var showingImportError = false
+    @State private var importedTripName = ""
+    @State private var importErrorMessage = ""
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -27,6 +31,51 @@ struct MainTabView: View {
                     Label("My Trips", systemImage: "map")
                 }
                 .tag(2)
+        }
+        .onOpenURL { url in
+            handleIncomingURL(url)
+        }
+        .alert("Trip Imported!", isPresented: $showingImportSuccess) {
+            Button("View Trip") {
+                selectedTab = 2 // Switch to My Trips tab
+            }
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("'\(importedTripName)' has been added to your trips.")
+        }
+        .alert("Import Failed", isPresented: $showingImportError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(importErrorMessage)
+        }
+    }
+
+    private func handleIncomingURL(_ url: URL) {
+        guard url.scheme == Trip.urlScheme else { return }
+
+        do {
+            var importedTrip = try Trip.importFromLink(url)
+
+            // Create a new ID to avoid conflicts with existing trips
+            importedTrip = Trip(
+                id: UUID(),
+                name: importedTrip.name,
+                startDate: importedTrip.startDate,
+                endDate: importedTrip.endDate,
+                destinations: importedTrip.destinations,
+                createdAt: Date(),
+                updatedAt: Date(),
+                notes: importedTrip.notes,
+                sourceSuggestionName: importedTrip.sourceSuggestionName,
+                linkedFlightNumber: importedTrip.linkedFlightNumber
+            )
+
+            tripViewModel.createTripFromSuggestion(importedTrip)
+            importedTripName = importedTrip.name
+            showingImportSuccess = true
+        } catch {
+            importErrorMessage = error.localizedDescription
+            showingImportError = true
         }
     }
 }
