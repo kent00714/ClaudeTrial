@@ -1,6 +1,10 @@
 import Foundation
 
-class FlightService {
+protocol FlightServiceProtocol {
+    func fetchFlights(direction: FlightDirection) async throws -> [Flight]
+}
+
+class FlightService: FlightServiceProtocol {
 
     // MARK: - Public API
 

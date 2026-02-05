@@ -15,7 +15,30 @@
 		A1000006 /* FlightDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000006; };
 		A1000007 /* FlightViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007; };
 		A1000008 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000008; };
+		B1000001 /* FlightModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001; };
+		B1000002 /* FlightViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002; };
+		B1000003 /* FlightServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003; };
+		B1000004 /* ViewRenderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000004; };
+		B1000005 /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000005; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B7000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A4000001;
+			proxyType = 1;
+			remoteGlobalIDString = A4000000;
+			remoteInfo = TPEFlightTracker;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		B7000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A4000000;
+			targetProxy = B7000001;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXFileReference section */
 		A2000000 /* TPEFlightTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TPEFlightTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -27,6 +50,12 @@
 		A2000006 /* FlightDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightDetailView.swift; sourceTree = "<group>"; };
 		A2000007 /* FlightViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightViewModel.swift; sourceTree = "<group>"; };
 		A2000008 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B2000000 /* TPEFlightTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TPEFlightTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B2000001 /* FlightModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightModelTests.swift; sourceTree = "<group>"; };
+		B2000002 /* FlightViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightViewModelTests.swift; sourceTree = "<group>"; };
+		B2000003 /* FlightServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightServiceTests.swift; sourceTree = "<group>"; };
+		B2000004 /* ViewRenderingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewRenderingTests.swift; sourceTree = "<group>"; };
+		B2000005 /* TestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -34,6 +63,7 @@
 			isa = PBXGroup;
 			children = (
 				A3000001 /* TPEFlightTracker */,
+				B3000001 /* TPEFlightTrackerTests */,
 				A3000005 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -81,8 +111,21 @@
 			isa = PBXGroup;
 			children = (
 				A2000000 /* TPEFlightTracker.app */,
+				B2000000 /* TPEFlightTrackerTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		B3000001 /* TPEFlightTrackerTests */ = {
+			isa = PBXGroup;
+			children = (
+				B2000005 /* TestHelpers.swift */,
+				B2000001 /* FlightModelTests.swift */,
+				B2000002 /* FlightViewModelTests.swift */,
+				B2000003 /* FlightServiceTests.swift */,
+				B2000004 /* ViewRenderingTests.swift */,
+			);
+			path = TPEFlightTrackerTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -103,6 +146,22 @@
 			productName = TPEFlightTracker;
 			productReference = A2000000;
 			productType = "com.apple.product-type.application";
+		};
+		B4000000 /* TPEFlightTrackerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B6000002;
+			buildPhases = (
+				B5000000 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				B7000002,
+			);
+			name = TPEFlightTrackerTests;
+			productName = TPEFlightTrackerTests;
+			productReference = B2000000;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -128,6 +187,7 @@
 			projectRoot = "";
 			targets = (
 				A4000000 /* TPEFlightTracker */,
+				B4000000 /* TPEFlightTrackerTests */,
 			);
 		};
 /* End PBXProject section */
@@ -144,6 +204,18 @@
 				A1000005,
 				A1000006,
 				A1000007,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B5000000 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B1000001,
+				B1000002,
+				B1000003,
+				B1000004,
+				B1000005,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -261,6 +333,42 @@
 			};
 			name = Release;
 		};
+		B6000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.TPEFlightTrackerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TPEFlightTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TPEFlightTracker";
+			};
+			name = Debug;
+		};
+		B6000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.TPEFlightTrackerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TPEFlightTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/TPEFlightTracker";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -278,6 +386,15 @@
 			buildConfigurations = (
 				A6000005 /* Debug */,
 				A6000006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B6000002 /* Build configuration list for TPEFlightTrackerTests */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B6000005 /* Debug */,
+				B6000006 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -9,7 +9,11 @@ class FlightViewModel: ObservableObject {
     @Published var searchText = ""
     @Published var selectedDirection: FlightDirection = .arrival
 
-    private let flightService = FlightService()
+    private let flightService: FlightServiceProtocol
+
+    init(flightService: FlightServiceProtocol = FlightService()) {
+        self.flightService = flightService
+    }
 
     var filteredFlights: [Flight] {
         let flights = selectedDirection == .arrival ? arrivals : departures
