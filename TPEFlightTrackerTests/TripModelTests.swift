@@ -151,11 +151,12 @@ final class TripModelTests: XCTestCase {
 
     func testTravelModeAllCases() {
         let allModes = TravelMode.allCases
-        XCTAssertEqual(allModes.count, 4)
+        XCTAssertEqual(allModes.count, 5)
         XCTAssertTrue(allModes.contains(.driving))
         XCTAssertTrue(allModes.contains(.walking))
         XCTAssertTrue(allModes.contains(.bicycling))
         XCTAssertTrue(allModes.contains(.transit))
+        XCTAssertTrue(allModes.contains(.taxi))
     }
 
     func testTravelModeDisplayNames() {
@@ -163,6 +164,7 @@ final class TripModelTests: XCTestCase {
         XCTAssertEqual(TravelMode.walking.displayName, "Walking")
         XCTAssertEqual(TravelMode.bicycling.displayName, "Bicycling")
         XCTAssertEqual(TravelMode.transit.displayName, "Transit")
+        XCTAssertEqual(TravelMode.taxi.displayName, "Taxi")
     }
 
     func testTravelModeSystemImages() {
@@ -170,6 +172,7 @@ final class TripModelTests: XCTestCase {
         XCTAssertEqual(TravelMode.walking.systemImage, "figure.walk")
         XCTAssertEqual(TravelMode.bicycling.systemImage, "bicycle")
         XCTAssertEqual(TravelMode.transit.systemImage, "bus.fill")
+        XCTAssertEqual(TravelMode.taxi.systemImage, "car.side.fill")
     }
 
     func testTravelModeMKTransportType() {
@@ -177,6 +180,15 @@ final class TripModelTests: XCTestCase {
         XCTAssertEqual(TravelMode.walking.mkTransportType, .walking)
         XCTAssertEqual(TravelMode.bicycling.mkTransportType, .walking) // Fallback
         XCTAssertEqual(TravelMode.transit.mkTransportType, .transit)
+        XCTAssertEqual(TravelMode.taxi.mkTransportType, .automobile) // Uses driving routes
+    }
+
+    func testTravelModeSupportsBooking() {
+        XCTAssertFalse(TravelMode.driving.supportsBooking)
+        XCTAssertFalse(TravelMode.walking.supportsBooking)
+        XCTAssertFalse(TravelMode.bicycling.supportsBooking)
+        XCTAssertFalse(TravelMode.transit.supportsBooking)
+        XCTAssertTrue(TravelMode.taxi.supportsBooking)
     }
 
     func testTravelModeCodable() throws {

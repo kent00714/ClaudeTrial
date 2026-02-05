@@ -3,6 +3,7 @@ import SwiftUI
 struct MainTabView: View {
     @StateObject private var flightViewModel = FlightViewModel()
     @StateObject private var tripViewModel = TripViewModel()
+    @StateObject private var taxiViewModel = TaxiBookingViewModel()
     @State private var selectedTab = 0
     @State private var showingImportSuccess = false
     @State private var showingImportError = false
@@ -31,6 +32,13 @@ struct MainTabView: View {
                     Label("My Trips", systemImage: "map")
                 }
                 .tag(2)
+
+            // Taxi Tab
+            TaxiBookingListView()
+                .tabItem {
+                    Label("Taxi", systemImage: "car.side.fill")
+                }
+                .tag(3)
         }
         .onOpenURL { url in
             handleIncomingURL(url)

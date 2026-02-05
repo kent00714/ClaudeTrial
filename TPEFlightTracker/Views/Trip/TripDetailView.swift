@@ -5,11 +5,13 @@ struct TripDetailView: View {
     let trip: Trip
     @ObservedObject var viewModel: TripViewModel
     @ObservedObject var flightViewModel: FlightViewModel
+    @StateObject private var taxiViewModel = TaxiBookingViewModel()
     @State private var showingAddDestination = false
     @State private var showingEditTrip = false
     @State private var showingEditDestination: TripDestination?
     @State private var showingFlightDetail = false
     @State private var mapCameraPosition: MapCameraPosition = .automatic
+    @State private var showingTaxiBooking: (from: TripDestination, to: TripDestination)?
 
     init(trip: Trip, viewModel: TripViewModel, flightViewModel: FlightViewModel = FlightViewModel()) {
         self.trip = trip
@@ -250,12 +252,31 @@ struct TripDetailView: View {
                     .buttonStyle(.borderedProminent)
                 }
             } else {
+                // Taxi bookings section
+                if !taxiViewModel.getBookingsForTrip(tripId: trip.id).isEmpty {
+                    Section {
+                        ForEach(taxiViewModel.getBookingsForTrip(tripId: trip.id)) { booking in
+                            TaxiBookingRowView(booking: booking)
+                        }
+                    } header: {
+                        Label("Taxi Bookings", systemImage: "car.side.fill")
+                    }
+                }
+
+                // Destinations
                 ForEach(Array(trip.destinations.enumerated()), id: \.element.id) { index, destination in
+                    let previousDestination = index > 0 ? trip.destinations[index - 1] : nil
                     DestinationRowView(
                         destination: destination,
                         index: index,
                         isFirst: index == 0,
-                        isLast: index == trip.destinations.count - 1
+                        isLast: index == trip.destinations.count - 1,
+                        showTaxiBooking: destination.travelMode == .taxi && previousDestination != nil,
+                        onBookTaxi: {
+                            if let prev = previousDestination {
+                                showingTaxiBooking = (from: prev, to: destination)
+                            }
+                        }
                     )
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -277,7 +298,25 @@ struct TripDetailView: View {
             }
         }
         .listStyle(.plain)
+        .sheet(item: Binding(
+            get: { showingTaxiBooking.map { TaxiBookingSheetData(from: $0.from, to: $0.to) } },
+            set: { _ in showingTaxiBooking = nil }
+        )) { data in
+            BookTaxiForTripView(
+                trip: trip,
+                fromDestination: data.from,
+                toDestination: data.to,
+                taxiViewModel: taxiViewModel
+            )
+        }
     }
+}
+
+// Helper struct for sheet binding
+private struct TaxiBookingSheetData: Identifiable {
+    let id = UUID()
+    let from: TripDestination
+    let to: TripDestination
 }
 
 struct DestinationRowView: View {
@@ -285,6 +324,8 @@ struct DestinationRowView: View {
     let index: Int
     let isFirst: Bool
     let isLast: Bool
+    var showTaxiBooking: Bool = false
+    var onBookTaxi: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -296,6 +337,26 @@ struct DestinationRowView: View {
                     Text(duration)
                     if let distance = destination.formattedTravelDistance {
                         Text("(\(distance))")
+                    }
+
+                    // Taxi booking button
+                    if destination.travelMode == .taxi && showTaxiBooking {
+                        Spacer()
+                        Button {
+                            onBookTaxi?()
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "calendar.badge.plus")
+                                Text("Book")
+                            }
+                            .font(.caption2)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.orange.opacity(0.2))
+                            .foregroundStyle(.orange)
+                            .clipShape(Capsule())
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .font(.caption2)

@@ -340,6 +340,7 @@ enum TravelMode: String, Codable, CaseIterable, Identifiable {
     case walking
     case bicycling
     case transit
+    case taxi
 
     var id: String { rawValue }
 
@@ -349,6 +350,7 @@ enum TravelMode: String, Codable, CaseIterable, Identifiable {
         case .walking: return "Walking"
         case .bicycling: return "Bicycling"
         case .transit: return "Transit"
+        case .taxi: return "Taxi"
         }
     }
 
@@ -358,10 +360,16 @@ enum TravelMode: String, Codable, CaseIterable, Identifiable {
         case .walking: return "figure.walk"
         case .bicycling: return "bicycle"
         case .transit: return "bus.fill"
+        case .taxi: return "car.side.fill"
         }
     }
 
     var googleMapsMode: String {
         rawValue
+    }
+
+    /// Whether this mode supports booking
+    var supportsBooking: Bool {
+        self == .taxi
     }
 }

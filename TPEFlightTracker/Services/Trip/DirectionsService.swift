@@ -66,6 +66,7 @@ extension TravelMode {
         case .walking: return .walking
         case .bicycling: return .walking // MapKit doesn't support bicycling, fallback to walking
         case .transit: return .transit
+        case .taxi: return .automobile // Taxi uses driving routes
         }
     }
 }
