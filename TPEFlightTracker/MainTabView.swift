@@ -14,12 +14,19 @@ struct MainTabView: View {
                 }
                 .tag(0)
 
+            // Discover Tab (AI Suggestions)
+            TripSuggestionsView(tripViewModel: tripViewModel)
+                .tabItem {
+                    Label("Discover", systemImage: "sparkles")
+                }
+                .tag(1)
+
             // Trips Tab
             TripListView(viewModel: tripViewModel)
                 .tabItem {
-                    Label("Trips", systemImage: "map")
+                    Label("My Trips", systemImage: "map")
                 }
-                .tag(1)
+                .tag(2)
         }
     }
 }

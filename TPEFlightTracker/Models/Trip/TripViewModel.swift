@@ -34,6 +34,12 @@ class TripViewModel: ObservableObject {
         loadTrips()
     }
 
+    /// Create a trip from a suggestion (with destinations pre-populated)
+    func createTripFromSuggestion(_ trip: Trip) {
+        tripService.addTrip(trip)
+        loadTrips()
+    }
+
     func updateTrip(_ trip: Trip) {
         tripService.updateTrip(trip)
         loadTrips()

@@ -1,6 +1,6 @@
 # TPE Flight Tracker
 
-iOS app for tracking flights at Taiwan Taoyuan International Airport (TPE) with trip planning features.
+iOS app for tracking flights at Taiwan Taoyuan International Airport (TPE) with trip planning and AI-curated travel suggestions for visitors.
 
 ## Project Overview
 
@@ -18,6 +18,15 @@ iOS app for tracking flights at Taiwan Taoyuan International Airport (TPE) with 
 - Search by flight number, airline, or city
 - Flight details including terminal, gate, status
 
+### Discover Taiwan (AI Trip Suggestions)
+- Curated trip itineraries for first-time visitors
+- 10 categories: First Time, Cultural, Foodie, Nature, Nightlife, Shopping, Family, Romantic, Adventure, Trending
+- Multiple trip durations: Half Day, Full Day, Weekend, 3 Days, 1 Week
+- Detailed destination info with local tips
+- Budget levels and difficulty ratings
+- One-tap add to personal trips
+- Search across all suggestions
+
 ### Trip Arrangement
 - Create and manage trips with multiple destinations
 - Apple MapKit integration for route calculation (free, no API key)
@@ -30,13 +39,14 @@ iOS app for tracking flights at Taiwan Taoyuan International Airport (TPE) with 
 ```
 TPEFlightTracker/
 ├── TPEFlightTrackerApp.swift      # App entry point
-├── MainTabView.swift              # Tab navigation (Flights/Trips)
+├── MainTabView.swift              # Tab navigation (Flights/Discover/Trips)
 ├── ContentView.swift              # Legacy view
 ├── Models/
 │   ├── FlightModel.swift          # Flight, Airport, FlightStatus
 │   ├── FlightViewModel.swift      # Flight list state management
 │   └── Trip/
 │       ├── TripModels.swift       # Trip, TripDestination, TravelMode
+│       ├── TripSuggestionModels.swift  # Suggestion categories, destinations
 │       └── TripViewModel.swift    # Trip state management
 ├── Views/
 │   ├── FlightListView.swift       # Flight list UI
@@ -44,7 +54,9 @@ TPEFlightTracker/
 │   └── Trip/
 │       ├── TripListView.swift     # Trip list UI
 │       ├── TripDetailView.swift   # Trip details with map
-│       └── AddDestinationView.swift # Location search
+│       ├── AddDestinationView.swift    # Location search
+│       ├── TripSuggestionsView.swift   # Browse suggestions by category
+│       └── SuggestionDetailView.swift  # Suggestion details with map
 ├── Services/
 │   ├── APIConfig.swift            # API keys and rate limits
 │   ├── AirLabsModels.swift        # AirLabs API response models
@@ -52,8 +64,9 @@ TPEFlightTracker/
 │   ├── AirlineLookup.swift        # Airline code to name mapping
 │   ├── FlightService.swift        # Flight data fetching
 │   └── Trip/
-│       ├── DirectionsService.swift # MapKit directions
-│       └── TripService.swift       # Trip persistence
+│       ├── DirectionsService.swift     # MapKit directions
+│       ├── TripService.swift           # Trip persistence
+│       └── TripSuggestionService.swift # Curated trip suggestions
 
 TPEFlightTrackerTests/
 ├── TestHelpers.swift              # Mocks and test data factories
@@ -64,7 +77,8 @@ TPEFlightTrackerTests/
 ├── TripModelTests.swift           # Trip model tests
 ├── TripViewModelTests.swift       # Trip VM tests
 ├── TripServiceTests.swift         # Trip persistence tests
-└── DirectionsServiceTests.swift   # Directions tests
+├── DirectionsServiceTests.swift   # Directions tests
+└── TripSuggestionServiceTests.swift # Suggestion service tests
 ```
 
 ## API Configuration
@@ -85,13 +99,30 @@ TPEFlightTrackerTests/
 - `FlightServiceProtocol` - Flight data fetching
 - `TripServiceProtocol` - Trip CRUD operations
 - `DirectionsServiceProtocol` - Route calculation
+- `TripSuggestionServiceProtocol` - Trip suggestions
 
 All services are injectable for testability.
 
+## Suggestion Categories
+
+| Category | Description |
+|----------|-------------|
+| First Time | Must-see attractions for newcomers |
+| Cultural | Temples, museums, historic sites |
+| Foodie | Street food, night markets, restaurants |
+| Nature | Mountains, waterfalls, national parks |
+| Nightlife | Night markets, entertainment areas |
+| Shopping | Malls, markets, boutiques |
+| Family | Kid-friendly attractions |
+| Romantic | Scenic spots for couples |
+| Adventure | Hiking, outdoor activities |
+| Trending | Currently popular spots |
+
 ## Testing
 
-75+ unit tests covering:
+90+ unit tests covering:
 - Model initialization and Codable conformance
 - ViewModel state management
 - Service layer persistence
 - Mock-based async operations
+- Suggestion service and model tests
