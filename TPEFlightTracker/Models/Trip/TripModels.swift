@@ -11,6 +11,7 @@ struct Trip: Identifiable, Codable, Equatable {
     var updatedAt: Date
     var notes: String
     var sourceSuggestionName: String?  // Track if this trip came from a suggestion
+    var linkedFlightNumber: String?    // Flight number to track (e.g., "CI123")
 
     init(
         id: UUID = UUID(),
@@ -21,7 +22,8 @@ struct Trip: Identifiable, Codable, Equatable {
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
         notes: String = "",
-        sourceSuggestionName: String? = nil
+        sourceSuggestionName: String? = nil,
+        linkedFlightNumber: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -32,10 +34,16 @@ struct Trip: Identifiable, Codable, Equatable {
         self.updatedAt = updatedAt
         self.notes = notes
         self.sourceSuggestionName = sourceSuggestionName
+        self.linkedFlightNumber = linkedFlightNumber
     }
 
     var isFromSuggestion: Bool {
         sourceSuggestionName != nil
+    }
+
+    var hasLinkedFlight: Bool {
+        guard let flight = linkedFlightNumber else { return false }
+        return !flight.isEmpty
     }
 
     var totalDestinations: Int {

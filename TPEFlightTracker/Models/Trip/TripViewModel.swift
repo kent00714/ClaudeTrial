@@ -24,11 +24,12 @@ class TripViewModel: ObservableObject {
         trips = tripService.loadTrips()
     }
 
-    func createTrip(name: String, startDate: Date, endDate: Date) {
+    func createTrip(name: String, startDate: Date, endDate: Date, flightNumber: String? = nil) {
         let trip = Trip(
             name: name,
             startDate: startDate,
-            endDate: endDate
+            endDate: endDate,
+            linkedFlightNumber: flightNumber
         )
         tripService.addTrip(trip)
         loadTrips()

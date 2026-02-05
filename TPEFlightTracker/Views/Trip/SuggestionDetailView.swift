@@ -3,14 +3,14 @@ import MapKit
 
 struct SuggestionDetailView: View {
     let suggestion: TripSuggestion
-    let onAddToTrips: (String, Date, String) -> Void  // (name, startDate, notes)
+    let onAddToTrips: (String, Date, String, String?) -> Void  // (name, startDate, notes, flightNumber)
 
     @Environment(\.dismiss) private var dismiss
     @State private var selectedDestination: SuggestedDestination?
     @State private var showingCustomizeSheet = false
     @State private var mapRegion: MKCoordinateRegion
 
-    init(suggestion: TripSuggestion, onAddToTrips: @escaping (String, Date, String) -> Void) {
+    init(suggestion: TripSuggestion, onAddToTrips: @escaping (String, Date, String, String?) -> Void) {
         self.suggestion = suggestion
         self.onAddToTrips = onAddToTrips
 
@@ -95,8 +95,8 @@ struct SuggestionDetailView: View {
             .sheet(isPresented: $showingCustomizeSheet) {
                 CustomizeTripSheet(
                     suggestion: suggestion,
-                    onConfirm: { name, startDate, notes in
-                        onAddToTrips(name, startDate, notes)
+                    onConfirm: { name, startDate, notes, flightNumber in
+                        onAddToTrips(name, startDate, notes, flightNumber)
                         showingCustomizeSheet = false
                     }
                 )
@@ -706,14 +706,15 @@ struct FlowLayout: Layout {
 
 struct CustomizeTripSheet: View {
     let suggestion: TripSuggestion
-    let onConfirm: (String, Date, String) -> Void  // (name, startDate, notes)
+    let onConfirm: (String, Date, String, String?) -> Void  // (name, startDate, notes, flightNumber)
 
     @Environment(\.dismiss) private var dismiss
     @State private var tripName: String
     @State private var startDate: Date = Date()
     @State private var notes: String
+    @State private var flightNumber: String = ""
 
-    init(suggestion: TripSuggestion, onConfirm: @escaping (String, Date, String) -> Void) {
+    init(suggestion: TripSuggestion, onConfirm: @escaping (String, Date, String, String?) -> Void) {
         self.suggestion = suggestion
         self.onConfirm = onConfirm
         _tripName = State(initialValue: suggestion.name)
@@ -726,6 +727,11 @@ struct CustomizeTripSheet: View {
             value: suggestion.duration.days,
             to: startDate
         ) ?? startDate
+    }
+
+    var cleanedFlightNumber: String? {
+        let cleaned = flightNumber.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        return cleaned.isEmpty ? nil : cleaned
     }
 
     var body: some View {
@@ -757,7 +763,7 @@ struct CustomizeTripSheet: View {
                     Text("Adding to Your Trips")
                 }
 
-                // Customize Name
+                // Customize Name & Dates
                 Section("Customize") {
                     TextField("Trip Name", text: $tripName)
 
@@ -769,6 +775,21 @@ struct CustomizeTripSheet: View {
                         Text(formatDate(endDate))
                             .foregroundStyle(.secondary)
                     }
+                }
+
+                // Flight Tracking
+                Section {
+                    HStack {
+                        Image(systemName: "airplane")
+                            .foregroundStyle(.blue)
+                        TextField("Flight Number (e.g., CI123)", text: $flightNumber)
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
+                    }
+                } header: {
+                    Text("Flight Tracking (Optional)")
+                } footer: {
+                    Text("Link your flight to track its status. Enter your flight number to TPE (e.g., CI123, BR872).")
                 }
 
                 // Optional Notes
@@ -811,7 +832,7 @@ struct CustomizeTripSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add Trip") {
-                        onConfirm(tripName, startDate, notes)
+                        onConfirm(tripName, startDate, notes, cleanedFlightNumber)
                     }
                     .fontWeight(.semibold)
                     .disabled(tripName.isEmpty)

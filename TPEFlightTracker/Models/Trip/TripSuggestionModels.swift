@@ -299,11 +299,11 @@ struct TripSuggestion: Identifiable, Codable, Equatable {
 
     /// Convert to Trip for adding to user's trips
     func toTrip(startDate: Date = Date()) -> Trip {
-        toTrip(name: name, startDate: startDate, notes: description)
+        toTrip(name: name, startDate: startDate, notes: description, flightNumber: nil)
     }
 
-    /// Convert to Trip with custom name, start date, and notes
-    func toTrip(name customName: String, startDate: Date, notes customNotes: String) -> Trip {
+    /// Convert to Trip with custom name, start date, notes, and optional flight number
+    func toTrip(name customName: String, startDate: Date, notes customNotes: String, flightNumber: String? = nil) -> Trip {
         let endDate = Calendar.current.date(
             byAdding: .day,
             value: duration.days,
@@ -316,7 +316,8 @@ struct TripSuggestion: Identifiable, Codable, Equatable {
             endDate: endDate,
             destinations: destinations.map { $0.toTripDestination() },
             notes: customNotes,
-            sourceSuggestionName: name  // Keep original suggestion name for reference
+            sourceSuggestionName: name,  // Keep original suggestion name for reference
+            linkedFlightNumber: flightNumber
         )
     }
 }

@@ -4,16 +4,29 @@ import MapKit
 struct TripDetailView: View {
     let trip: Trip
     @ObservedObject var viewModel: TripViewModel
+    @ObservedObject var flightViewModel: FlightViewModel
     @State private var showingAddDestination = false
     @State private var showingEditTrip = false
     @State private var showingEditDestination: TripDestination?
+    @State private var showingFlightDetail = false
     @State private var mapCameraPosition: MapCameraPosition = .automatic
+
+    init(trip: Trip, viewModel: TripViewModel, flightViewModel: FlightViewModel = FlightViewModel()) {
+        self.trip = trip
+        self.viewModel = viewModel
+        self.flightViewModel = flightViewModel
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             // Map
             TripMapView(destinations: trip.destinations, cameraPosition: $mapCameraPosition)
                 .frame(height: 250)
+
+            // Linked Flight (if any)
+            if trip.hasLinkedFlight {
+                linkedFlightSection
+            }
 
             // Trip info header (editable)
             tripInfoHeader
@@ -70,6 +83,63 @@ struct TripDetailView: View {
             }
         }
     }
+
+    // MARK: - Linked Flight Section
+
+    private var linkedFlightSection: some View {
+        Button {
+            // Search for the flight and show details
+            if let flightNumber = trip.linkedFlightNumber {
+                flightViewModel.searchQuery = flightNumber
+                Task {
+                    await flightViewModel.searchFlights()
+                    showingFlightDetail = true
+                }
+            }
+        } label: {
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(Color.blue.opacity(0.1))
+                        .frame(width: 44, height: 44)
+                    Image(systemName: "airplane")
+                        .font(.title3)
+                        .foregroundStyle(.blue)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Linked Flight")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(trip.linkedFlightNumber ?? "")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("Tap to check status")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding()
+            .background(Color.blue.opacity(0.05))
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showingFlightDetail) {
+            LinkedFlightStatusView(
+                flightNumber: trip.linkedFlightNumber ?? "",
+                flightViewModel: flightViewModel
+            )
+        }
+    }
+
+    // MARK: - Trip Info Header
 
     private var tripInfoHeader: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -331,6 +401,7 @@ struct EditTripView: View {
     @State private var startDate: Date
     @State private var endDate: Date
     @State private var notes: String
+    @State private var flightNumber: String
 
     init(trip: Trip, viewModel: TripViewModel) {
         self.trip = trip
@@ -339,6 +410,12 @@ struct EditTripView: View {
         _startDate = State(initialValue: trip.startDate)
         _endDate = State(initialValue: trip.endDate)
         _notes = State(initialValue: trip.notes)
+        _flightNumber = State(initialValue: trip.linkedFlightNumber ?? "")
+    }
+
+    var cleanedFlightNumber: String? {
+        let cleaned = flightNumber.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        return cleaned.isEmpty ? nil : cleaned
     }
 
     var body: some View {
@@ -350,6 +427,20 @@ struct EditTripView: View {
                     DatePicker("Start Date", selection: $startDate, displayedComponents: .date)
 
                     DatePicker("End Date", selection: $endDate, in: startDate..., displayedComponents: .date)
+                }
+
+                Section {
+                    HStack {
+                        Image(systemName: "airplane")
+                            .foregroundStyle(.blue)
+                        TextField("Flight Number (e.g., CI123)", text: $flightNumber)
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
+                    }
+                } header: {
+                    Text("Flight Tracking")
+                } footer: {
+                    Text("Link your flight to track its status directly from this trip.")
                 }
 
                 Section("Notes") {
@@ -399,6 +490,7 @@ struct EditTripView: View {
         updatedTrip.startDate = startDate
         updatedTrip.endDate = endDate
         updatedTrip.notes = notes
+        updatedTrip.linkedFlightNumber = cleanedFlightNumber
         updatedTrip.updatedAt = Date()
         viewModel.updateTrip(updatedTrip)
         dismiss()
@@ -542,6 +634,253 @@ struct EditDestinationView: View {
             await viewModel.removeDestination(destination, from: trip)
             dismiss()
         }
+    }
+}
+
+// MARK: - Linked Flight Status View
+
+struct LinkedFlightStatusView: View {
+    let flightNumber: String
+    @ObservedObject var flightViewModel: FlightViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    var matchingFlight: Flight? {
+        flightViewModel.flights.first { flight in
+            flight.flightNumber.uppercased().contains(flightNumber.uppercased()) ||
+            flightNumber.uppercased().contains(flight.flightNumber.uppercased())
+        }
+    }
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if flightViewModel.isLoading {
+                    VStack(spacing: 16) {
+                        ProgressView()
+                        Text("Searching for flight \(flightNumber)...")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                } else if let flight = matchingFlight {
+                    flightDetailContent(flight: flight)
+                } else if !flightViewModel.flights.isEmpty {
+                    // Found flights but none match
+                    ContentUnavailableView {
+                        Label("Flight Not Found", systemImage: "airplane.circle")
+                    } description: {
+                        Text("Could not find flight \(flightNumber) in today's schedule. The flight may have already departed or not yet scheduled.")
+                    }
+                } else {
+                    // No flights at all
+                    ContentUnavailableView {
+                        Label("No Results", systemImage: "magnifyingglass")
+                    } description: {
+                        Text("Unable to find flight information for \(flightNumber). Please check the flight number and try again.")
+                    } actions: {
+                        Button("Retry") {
+                            Task {
+                                await flightViewModel.searchFlights()
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
+                }
+            }
+            .navigationTitle("Flight Status")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private func flightDetailContent(flight: Flight) -> some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                // Flight Header
+                VStack(spacing: 8) {
+                    Text(flight.flightNumber)
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+
+                    Text(flight.airline)
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+
+                    // Status Badge
+                    Text(flight.status.displayName)
+                        .font(.headline)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(statusColor(for: flight.status).opacity(0.2))
+                        .foregroundStyle(statusColor(for: flight.status))
+                        .clipShape(Capsule())
+                }
+                .padding()
+
+                // Route Info
+                HStack(spacing: 0) {
+                    VStack {
+                        Text(flight.departureAirport)
+                            .font(.title)
+                            .fontWeight(.bold)
+                        Text(flight.departureCity)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+
+                    Image(systemName: "airplane")
+                        .font(.title2)
+                        .foregroundStyle(.blue)
+
+                    VStack {
+                        Text(flight.arrivalAirport)
+                            .font(.title)
+                            .fontWeight(.bold)
+                        Text(flight.arrivalCity)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal)
+
+                // Time Info
+                VStack(spacing: 16) {
+                    if let scheduledTime = flight.scheduledTime {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text("Scheduled")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(formatTime(scheduledTime))
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                            }
+                            Spacer()
+                        }
+                    }
+
+                    if let estimatedTime = flight.estimatedTime {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text("Estimated")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(formatTime(estimatedTime))
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.orange)
+                            }
+                            Spacer()
+                        }
+                    }
+
+                    if let actualTime = flight.actualTime {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text("Actual")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(formatTime(actualTime))
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.green)
+                            }
+                            Spacer()
+                        }
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal)
+
+                // Terminal & Gate
+                if flight.terminal != nil || flight.gate != nil {
+                    HStack(spacing: 24) {
+                        if let terminal = flight.terminal {
+                            VStack {
+                                Text("Terminal")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(terminal)
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+
+                        if let gate = flight.gate {
+                            VStack {
+                                Text("Gate")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(gate)
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                            }
+                            .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .padding(.horizontal)
+                }
+
+                // Refresh Button
+                Button {
+                    Task {
+                        await flightViewModel.searchFlights()
+                    }
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.clockwise")
+                        Text("Refresh Status")
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .padding(.horizontal)
+                .disabled(flightViewModel.isLoading)
+            }
+            .padding(.vertical)
+        }
+    }
+
+    private func statusColor(for status: FlightStatus) -> Color {
+        switch status {
+        case .scheduled, .active:
+            return .blue
+        case .landed:
+            return .green
+        case .cancelled:
+            return .red
+        case .delayed:
+            return .orange
+        case .diverted:
+            return .purple
+        case .unknown:
+            return .gray
+        }
+    }
+
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
     }
 }
 
