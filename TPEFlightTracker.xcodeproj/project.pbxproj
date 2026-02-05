@@ -19,6 +19,14 @@
 		A1000010 /* AirLabsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000010; };
 		A1000011 /* AirportLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000011; };
 		A1000012 /* AirlineLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000012; };
+		A1000013 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000013; };
+		A1000014 /* TripModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000014; };
+		A1000015 /* TripViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000015; };
+		A1000016 /* DirectionsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000016; };
+		A1000017 /* TripService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000017; };
+		A1000018 /* TripListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000018; };
+		A1000019 /* TripDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000019; };
+		A1000020 /* AddDestinationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000020; };
 		B1000001 /* FlightModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001; };
 		B1000002 /* FlightViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002; };
 		B1000003 /* FlightServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003; };
@@ -58,6 +66,14 @@
 		A2000010 /* AirLabsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirLabsModels.swift; sourceTree = "<group>"; };
 		A2000011 /* AirportLookup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirportLookup.swift; sourceTree = "<group>"; };
 		A2000012 /* AirlineLookup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirlineLookup.swift; sourceTree = "<group>"; };
+		A2000013 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		A2000014 /* TripModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripModels.swift; sourceTree = "<group>"; };
+		A2000015 /* TripViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripViewModel.swift; sourceTree = "<group>"; };
+		A2000016 /* DirectionsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectionsService.swift; sourceTree = "<group>"; };
+		A2000017 /* TripService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripService.swift; sourceTree = "<group>"; };
+		A2000018 /* TripListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripListView.swift; sourceTree = "<group>"; };
+		A2000019 /* TripDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripDetailView.swift; sourceTree = "<group>"; };
+		A2000020 /* AddDestinationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddDestinationView.swift; sourceTree = "<group>"; };
 		B2000000 /* TPEFlightTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TPEFlightTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B2000001 /* FlightModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightModelTests.swift; sourceTree = "<group>"; };
 		B2000002 /* FlightViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightViewModelTests.swift; sourceTree = "<group>"; };
@@ -80,6 +96,7 @@
 			isa = PBXGroup;
 			children = (
 				A2000001 /* TPEFlightTrackerApp.swift */,
+				A2000013 /* MainTabView.swift */,
 				A2000002 /* ContentView.swift */,
 				A3000002 /* Models */,
 				A3000003 /* Views */,
@@ -94,8 +111,18 @@
 			children = (
 				A2000003 /* FlightModel.swift */,
 				A2000007 /* FlightViewModel.swift */,
+				A3000006 /* Trip */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		A3000006 /* Trip */ = {
+			isa = PBXGroup;
+			children = (
+				A2000014 /* TripModels.swift */,
+				A2000015 /* TripViewModel.swift */,
+			);
+			path = Trip;
 			sourceTree = "<group>";
 		};
 		A3000003 /* Views */ = {
@@ -103,8 +130,19 @@
 			children = (
 				A2000005 /* FlightListView.swift */,
 				A2000006 /* FlightDetailView.swift */,
+				A3000007 /* Trip */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		A3000007 /* Trip */ = {
+			isa = PBXGroup;
+			children = (
+				A2000018 /* TripListView.swift */,
+				A2000019 /* TripDetailView.swift */,
+				A2000020 /* AddDestinationView.swift */,
+			);
+			path = Trip;
 			sourceTree = "<group>";
 		};
 		A3000004 /* Services */ = {
@@ -115,8 +153,18 @@
 				A2000011 /* AirportLookup.swift */,
 				A2000012 /* AirlineLookup.swift */,
 				A2000004 /* FlightService.swift */,
+				A3000008 /* Trip */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		A3000008 /* Trip */ = {
+			isa = PBXGroup;
+			children = (
+				A2000016 /* DirectionsService.swift */,
+				A2000017 /* TripService.swift */,
+			);
+			path = Trip;
 			sourceTree = "<group>";
 		};
 		A3000005 /* Products */ = {
@@ -220,6 +268,14 @@
 				A1000010,
 				A1000011,
 				A1000012,
+				A1000013,
+				A1000014,
+				A1000015,
+				A1000016,
+				A1000017,
+				A1000018,
+				A1000019,
+				A1000020,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

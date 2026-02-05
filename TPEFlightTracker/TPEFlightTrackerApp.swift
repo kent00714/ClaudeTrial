@@ -4,7 +4,7 @@ import SwiftUI
 struct TPEFlightTrackerApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainTabView()
         }
     }
 }
