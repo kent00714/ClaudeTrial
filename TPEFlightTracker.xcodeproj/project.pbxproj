@@ -32,6 +32,10 @@
 		B1000003 /* FlightServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003; };
 		B1000004 /* ViewRenderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000004; };
 		B1000005 /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000005; };
+		B1000006 /* TripModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000006; };
+		B1000007 /* TripViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000007; };
+		B1000008 /* TripServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000008; };
+		B1000009 /* DirectionsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000009; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -80,6 +84,10 @@
 		B2000003 /* FlightServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightServiceTests.swift; sourceTree = "<group>"; };
 		B2000004 /* ViewRenderingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewRenderingTests.swift; sourceTree = "<group>"; };
 		B2000005 /* TestHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestHelpers.swift; sourceTree = "<group>"; };
+		B2000006 /* TripModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripModelTests.swift; sourceTree = "<group>"; };
+		B2000007 /* TripViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripViewModelTests.swift; sourceTree = "<group>"; };
+		B2000008 /* TripServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripServiceTests.swift; sourceTree = "<group>"; };
+		B2000009 /* DirectionsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectionsServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -184,6 +192,10 @@
 				B2000002 /* FlightViewModelTests.swift */,
 				B2000003 /* FlightServiceTests.swift */,
 				B2000004 /* ViewRenderingTests.swift */,
+				B2000006 /* TripModelTests.swift */,
+				B2000007 /* TripViewModelTests.swift */,
+				B2000008 /* TripServiceTests.swift */,
+				B2000009 /* DirectionsServiceTests.swift */,
 			);
 			path = TPEFlightTrackerTests;
 			sourceTree = "<group>";
@@ -288,6 +300,10 @@
 				B1000003,
 				B1000004,
 				B1000005,
+				B1000006,
+				B1000007,
+				B1000008,
+				B1000009,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
