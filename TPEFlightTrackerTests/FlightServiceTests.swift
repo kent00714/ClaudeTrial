@@ -7,16 +7,25 @@ final class FlightServiceTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        // Uses default API key "YOUR_API_KEY_HERE" which triggers mock fallback
         service = FlightService()
     }
 
-    // MARK: - Arrival Flights
+    // MARK: - Mock Fallback (no API key)
 
-    func testFetchArrivalsReturnsFlights() async throws {
+    func testFetchArrivalsReturnsMockFlightsWithoutAPIKey() async throws {
         let flights = try await service.fetchFlights(direction: .arrival)
         XCTAssertFalse(flights.isEmpty)
         XCTAssertEqual(flights.count, 15)
     }
+
+    func testFetchDeparturesReturnsMockFlightsWithoutAPIKey() async throws {
+        let flights = try await service.fetchFlights(direction: .departure)
+        XCTAssertFalse(flights.isEmpty)
+        XCTAssertEqual(flights.count, 15)
+    }
+
+    // MARK: - Arrival Mock Flights
 
     func testArrivalFlightsHaveTPEAsDestination() async throws {
         let flights = try await service.fetchFlights(direction: .arrival)
@@ -40,13 +49,7 @@ final class FlightServiceTests: XCTestCase {
         }
     }
 
-    // MARK: - Departure Flights
-
-    func testFetchDeparturesReturnsFlights() async throws {
-        let flights = try await service.fetchFlights(direction: .departure)
-        XCTAssertFalse(flights.isEmpty)
-        XCTAssertEqual(flights.count, 15)
-    }
+    // MARK: - Departure Mock Flights
 
     func testDepartureFlightsHaveTPEAsOrigin() async throws {
         let flights = try await service.fetchFlights(direction: .departure)
@@ -122,5 +125,140 @@ final class FlightServiceTests: XCTestCase {
             XCTAssertNotNil(flight.actualTime,
                           "\(flight.status.rawValue) flight \(flight.flightNumber) should have actual time")
         }
+    }
+
+    // MARK: - AirportLookup
+
+    func testAirportLookupReturnsKnownAirport() {
+        let airport = AirportLookup.airport(for: "TPE")
+        XCTAssertEqual(airport.iata, "TPE")
+        XCTAssertEqual(airport.city, "Taipei")
+        XCTAssertTrue(airport.name.contains("Taoyuan"))
+    }
+
+    func testAirportLookupReturnsKnownJapaneseAirport() {
+        let airport = AirportLookup.airport(for: "NRT")
+        XCTAssertEqual(airport.iata, "NRT")
+        XCTAssertEqual(airport.city, "Tokyo")
+    }
+
+    func testAirportLookupFallsBackForUnknownCode() {
+        let airport = AirportLookup.airport(for: "XYZ")
+        XCTAssertEqual(airport.iata, "XYZ")
+        XCTAssertEqual(airport.city, "XYZ")
+    }
+
+    // MARK: - AirlineLookup
+
+    func testAirlineLookupReturnsKnownAirline() {
+        XCTAssertEqual(AirlineLookup.airlineName(for: "CI"), "China Airlines")
+        XCTAssertEqual(AirlineLookup.airlineName(for: "BR"), "EVA Air")
+        XCTAssertEqual(AirlineLookup.airlineName(for: "JX"), "Starlux Airlines")
+    }
+
+    func testAirlineLookupFallsBackForUnknownCode() {
+        XCTAssertEqual(AirlineLookup.airlineName(for: "ZZ"), "ZZ")
+    }
+
+    // MARK: - APIConfig
+
+    func testAPIConfigDefaults() {
+        XCTAssertEqual(APIConfig.airportCode, "TPE")
+        XCTAssertTrue(APIConfig.airLabsBaseURL.contains("airlabs.co"))
+    }
+
+    // MARK: - FlightServiceError
+
+    func testFlightServiceErrorDescriptions() {
+        XCTAssertNotNil(FlightServiceError.invalidURL.errorDescription)
+        XCTAssertNotNil(FlightServiceError.invalidResponse.errorDescription)
+        XCTAssertNotNil(FlightServiceError.httpError(statusCode: 401).errorDescription)
+        XCTAssertTrue(FlightServiceError.httpError(statusCode: 401).errorDescription!.contains("401"))
+    }
+
+    // MARK: - AirLabsSchedule Decoding
+
+    func testAirLabsScheduleResponseDecoding() throws {
+        let json = """
+        {
+            "response": [
+                {
+                    "airline_iata": "CI",
+                    "flight_iata": "CI100",
+                    "flight_number": "100",
+                    "dep_iata": "NRT",
+                    "arr_iata": "TPE",
+                    "dep_terminal": "1",
+                    "arr_terminal": "2",
+                    "dep_gate": "A1",
+                    "arr_gate": "B5",
+                    "dep_time": "2026-02-05 10:00",
+                    "arr_time": "2026-02-05 13:30",
+                    "dep_estimated": "2026-02-05 10:15",
+                    "arr_estimated": "2026-02-05 13:45",
+                    "status": "active",
+                    "duration": 210,
+                    "delayed": 15,
+                    "aircraft_icao": "B77W",
+                    "cs_flight_iata": "NH5100"
+                }
+            ]
+        }
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(AirLabsScheduleResponse.self, from: json)
+        XCTAssertEqual(decoded.response.count, 1)
+
+        let schedule = decoded.response[0]
+        XCTAssertEqual(schedule.airlineIata, "CI")
+        XCTAssertEqual(schedule.flightIata, "CI100")
+        XCTAssertEqual(schedule.flightNumber, "100")
+        XCTAssertEqual(schedule.depIata, "NRT")
+        XCTAssertEqual(schedule.arrIata, "TPE")
+        XCTAssertEqual(schedule.depTerminal, "1")
+        XCTAssertEqual(schedule.arrTerminal, "2")
+        XCTAssertEqual(schedule.depGate, "A1")
+        XCTAssertEqual(schedule.arrGate, "B5")
+        XCTAssertEqual(schedule.depTime, "2026-02-05 10:00")
+        XCTAssertEqual(schedule.arrTime, "2026-02-05 13:30")
+        XCTAssertEqual(schedule.depEstimated, "2026-02-05 10:15")
+        XCTAssertEqual(schedule.arrEstimated, "2026-02-05 13:45")
+        XCTAssertEqual(schedule.status, "active")
+        XCTAssertEqual(schedule.duration, 210)
+        XCTAssertEqual(schedule.delayed, 15)
+        XCTAssertEqual(schedule.aircraftIcao, "B77W")
+        XCTAssertEqual(schedule.csFlightIata, "NH5100")
+    }
+
+    func testAirLabsScheduleHandlesNullFields() throws {
+        let json = """
+        {
+            "response": [
+                {
+                    "airline_iata": "BR",
+                    "flight_iata": "BR201",
+                    "dep_iata": "TPE",
+                    "arr_iata": "LAX",
+                    "dep_time": "2026-02-05 23:00",
+                    "arr_time": "2026-02-05 19:00",
+                    "status": "scheduled"
+                }
+            ]
+        }
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(AirLabsScheduleResponse.self, from: json)
+        let schedule = decoded.response[0]
+        XCTAssertNil(schedule.depTerminal)
+        XCTAssertNil(schedule.arrTerminal)
+        XCTAssertNil(schedule.depGate)
+        XCTAssertNil(schedule.arrGate)
+        XCTAssertNil(schedule.depEstimated)
+        XCTAssertNil(schedule.arrEstimated)
+        XCTAssertNil(schedule.depActual)
+        XCTAssertNil(schedule.arrActual)
+        XCTAssertNil(schedule.delayed)
+        XCTAssertNil(schedule.aircraftIcao)
+        XCTAssertNil(schedule.csFlightIata)
     }
 }

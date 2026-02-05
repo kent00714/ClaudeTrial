@@ -15,6 +15,10 @@
 		A1000006 /* FlightDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000006; };
 		A1000007 /* FlightViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007; };
 		A1000008 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000008; };
+		A1000009 /* APIConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000009; };
+		A1000010 /* AirLabsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000010; };
+		A1000011 /* AirportLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000011; };
+		A1000012 /* AirlineLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000012; };
 		B1000001 /* FlightModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001; };
 		B1000002 /* FlightViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002; };
 		B1000003 /* FlightServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003; };
@@ -50,6 +54,10 @@
 		A2000006 /* FlightDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightDetailView.swift; sourceTree = "<group>"; };
 		A2000007 /* FlightViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightViewModel.swift; sourceTree = "<group>"; };
 		A2000008 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A2000009 /* APIConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIConfig.swift; sourceTree = "<group>"; };
+		A2000010 /* AirLabsModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirLabsModels.swift; sourceTree = "<group>"; };
+		A2000011 /* AirportLookup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirportLookup.swift; sourceTree = "<group>"; };
+		A2000012 /* AirlineLookup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AirlineLookup.swift; sourceTree = "<group>"; };
 		B2000000 /* TPEFlightTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TPEFlightTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B2000001 /* FlightModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightModelTests.swift; sourceTree = "<group>"; };
 		B2000002 /* FlightViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightViewModelTests.swift; sourceTree = "<group>"; };
@@ -102,6 +110,10 @@
 		A3000004 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				A2000009 /* APIConfig.swift */,
+				A2000010 /* AirLabsModels.swift */,
+				A2000011 /* AirportLookup.swift */,
+				A2000012 /* AirlineLookup.swift */,
 				A2000004 /* FlightService.swift */,
 			);
 			path = Services;
@@ -204,6 +216,10 @@
 				A1000005,
 				A1000006,
 				A1000007,
+				A1000009,
+				A1000010,
+				A1000011,
+				A1000012,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

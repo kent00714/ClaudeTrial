@@ -6,19 +6,155 @@ protocol FlightServiceProtocol {
 
 class FlightService: FlightServiceProtocol {
 
-    // MARK: - Public API
+    private let session: URLSession
+    private let apiKey: String
+    private let baseURL: String
 
-    /// Fetch flights for TPE airport.
-    /// Replace the mock implementation with a real API call when ready
-    /// (e.g., AviationStack, FlightAware, or Taiwan MOTC open data).
-    func fetchFlights(direction: FlightDirection) async throws -> [Flight] {
-        // TODO: Replace with real API integration
-        // Example endpoint: https://tdx.transportdata.tw/api/basic/v2/Air/FIDS/Airport/TPE
-        try await Task.sleep(nanoseconds: 500_000_000) // simulate network delay
-        return Self.mockFlights(direction: direction)
+    init(
+        session: URLSession = .shared,
+        apiKey: String = APIConfig.airLabsAPIKey,
+        baseURL: String = APIConfig.airLabsBaseURL
+    ) {
+        self.session = session
+        self.apiKey = apiKey
+        self.baseURL = baseURL
     }
 
-    // MARK: - Mock Data
+    // MARK: - Public API
+
+    func fetchFlights(direction: FlightDirection) async throws -> [Flight] {
+        // Fall back to mock data if no API key is configured
+        guard apiKey != "YOUR_API_KEY_HERE" else {
+            return Self.mockFlights(direction: direction)
+        }
+
+        let schedules = try await fetchSchedules(direction: direction)
+        return schedules.compactMap { schedule in
+            Self.convert(schedule: schedule, direction: direction)
+        }
+    }
+
+    // MARK: - AirLabs API
+
+    private func fetchSchedules(direction: FlightDirection) async throws -> [AirLabsSchedule] {
+        let paramKey = direction == .arrival ? "arr_iata" : "dep_iata"
+        let urlString = "\(baseURL)/schedules?\(paramKey)=\(APIConfig.airportCode)&api_key=\(apiKey)"
+
+        guard let url = URL(string: urlString) else {
+            throw FlightServiceError.invalidURL
+        }
+
+        let (data, response) = try await session.data(from: url)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw FlightServiceError.invalidResponse
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            throw FlightServiceError.httpError(statusCode: httpResponse.statusCode)
+        }
+
+        let decoded = try JSONDecoder().decode(AirLabsScheduleResponse.self, from: data)
+        return decoded.response
+    }
+
+    // MARK: - Conversion
+
+    private static func convert(schedule: AirLabsSchedule, direction: FlightDirection) -> Flight? {
+        guard let flightIata = schedule.flightIata,
+              let depIata = schedule.depIata,
+              let arrIata = schedule.arrIata,
+              let depTimeStr = schedule.depTime,
+              let arrTimeStr = schedule.arrTime else {
+            return nil
+        }
+
+        let origin = AirportLookup.airport(for: depIata)
+        let destination = AirportLookup.airport(for: arrIata)
+
+        let airlineName = schedule.airlineIata.map { AirlineLookup.airlineName(for: $0) } ?? flightIata
+        let airlineLogo = (schedule.airlineIata ?? "").lowercased()
+
+        let scheduledTime: Date
+        let estimatedTime: Date?
+        let actualTime: Date?
+
+        if direction == .arrival {
+            scheduledTime = parseLocalTime(arrTimeStr) ?? Date()
+            estimatedTime = schedule.arrEstimated.flatMap { parseLocalTime($0) }
+            actualTime = schedule.arrActual.flatMap { parseLocalTime($0) }
+        } else {
+            scheduledTime = parseLocalTime(depTimeStr) ?? Date()
+            estimatedTime = schedule.depEstimated.flatMap { parseLocalTime($0) }
+            actualTime = schedule.depActual.flatMap { parseLocalTime($0) }
+        }
+
+        let terminal: String
+        let gate: String?
+        if direction == .arrival {
+            terminal = schedule.arrTerminal ?? "--"
+            gate = schedule.arrGate
+        } else {
+            terminal = schedule.depTerminal ?? "--"
+            gate = schedule.depGate
+        }
+
+        let status = mapStatus(schedule.status, delayed: schedule.delayed)
+
+        var codeshares: [String] = []
+        if let csFlightIata = schedule.csFlightIata {
+            codeshares.append(csFlightIata)
+        }
+
+        let id = "\(direction == .arrival ? "arr" : "dep")-\(flightIata)-\(depTimeStr)"
+
+        return Flight(
+            id: id,
+            flightNumber: flightIata,
+            airline: airlineName,
+            airlineLogo: airlineLogo,
+            direction: direction == .arrival ? "arrival" : "departure",
+            origin: origin,
+            destination: destination,
+            scheduledTime: scheduledTime,
+            estimatedTime: estimatedTime,
+            actualTime: actualTime,
+            status: status,
+            terminal: terminal,
+            gate: gate,
+            aircraft: schedule.aircraftIcao,
+            codeshares: codeshares
+        )
+    }
+
+    private static func mapStatus(_ status: String?, delayed: Int?) -> FlightStatus {
+        guard let status = status?.lowercased() else { return .scheduled }
+
+        if let delayed = delayed, delayed > 0 {
+            return .delayed
+        }
+
+        switch status {
+        case "scheduled": return .scheduled
+        case "active", "en-route", "en_route": return .inAir
+        case "landed": return .landed
+        case "cancelled": return .cancelled
+        case "incident", "diverted": return .delayed
+        default: return .scheduled
+        }
+    }
+
+    private static func parseLocalTime(_ string: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        // AirLabs returns local times as "YYYY-MM-DD HH:mm"
+        formatter.dateFormat = "yyyy-MM-dd HH:mm"
+        // TPE is in Asia/Taipei timezone
+        formatter.timeZone = TimeZone(identifier: "Asia/Taipei")
+        return formatter.date(from: string)
+    }
+
+    // MARK: - Mock Data (fallback when no API key)
 
     private static let tpe = Airport(iata: "TPE", name: "Taiwan Taoyuan International Airport", city: "Taipei")
 
@@ -53,7 +189,7 @@ class FlightService: FlightServiceProtocol {
         ("UA", "United Airlines"),
     ]
 
-    private static func mockFlights(direction: FlightDirection) -> [Flight] {
+    static func mockFlights(direction: FlightDirection) -> [Flight] {
         let calendar = Calendar.current
         let now = Date()
 
@@ -99,6 +235,25 @@ class FlightService: FlightServiceProtocol {
                 aircraft: ["Boeing 777-300ER", "Airbus A350-900", "Boeing 787-9", "Airbus A321neo"][index % 4],
                 codeshares: index % 3 == 0 ? ["\(airlines[(index + 3) % airlines.count].code)\(200 + index)"] : []
             )
+        }
+    }
+}
+
+// MARK: - Errors
+
+enum FlightServiceError: LocalizedError {
+    case invalidURL
+    case invalidResponse
+    case httpError(statusCode: Int)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            return "Invalid API URL"
+        case .invalidResponse:
+            return "Invalid response from server"
+        case .httpError(let code):
+            return "Server returned error (HTTP \(code))"
         }
     }
 }
