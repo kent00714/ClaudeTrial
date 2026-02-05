@@ -3,13 +3,14 @@ import MapKit
 
 struct SuggestionDetailView: View {
     let suggestion: TripSuggestion
-    let onAddToTrips: () -> Void
+    let onAddToTrips: (String, Date, String) -> Void  // (name, startDate, notes)
 
     @Environment(\.dismiss) private var dismiss
     @State private var selectedDestination: SuggestedDestination?
+    @State private var showingCustomizeSheet = false
     @State private var mapRegion: MKCoordinateRegion
 
-    init(suggestion: TripSuggestion, onAddToTrips: @escaping () -> Void) {
+    init(suggestion: TripSuggestion, onAddToTrips: @escaping (String, Date, String) -> Void) {
         self.suggestion = suggestion
         self.onAddToTrips = onAddToTrips
 
@@ -90,6 +91,15 @@ struct SuggestionDetailView: View {
             }
             .sheet(item: $selectedDestination) { destination in
                 DestinationDetailSheet(destination: destination)
+            }
+            .sheet(isPresented: $showingCustomizeSheet) {
+                CustomizeTripSheet(
+                    suggestion: suggestion,
+                    onConfirm: { name, startDate, notes in
+                        onAddToTrips(name, startDate, notes)
+                        showingCustomizeSheet = false
+                    }
+                )
             }
         }
     }
@@ -390,19 +400,28 @@ struct SuggestionDetailView: View {
     // MARK: - Add to Trips Button
 
     private var addToTripsButton: some View {
-        Button {
-            onAddToTrips()
-        } label: {
-            HStack {
-                Image(systemName: "plus.circle.fill")
-                Text("Add to My Trips")
+        VStack(spacing: 12) {
+            // Primary action - Add and Customize
+            Button {
+                showingCustomizeSheet = true
+            } label: {
+                HStack {
+                    Image(systemName: "plus.circle.fill")
+                    Text("Add to My Trips")
+                }
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.blue)
+                .foregroundStyle(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
             }
-            .font(.headline)
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color.blue)
-            .foregroundStyle(.white)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
+
+            // Customization hint
+            Text("You can customize dates, destinations, and notes after adding")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
         .padding(.top, 8)
     }
@@ -680,5 +699,130 @@ struct FlowLayout: Layout {
 
             height = y + rowHeight
         }
+    }
+}
+
+// MARK: - Customize Trip Sheet
+
+struct CustomizeTripSheet: View {
+    let suggestion: TripSuggestion
+    let onConfirm: (String, Date, String) -> Void  // (name, startDate, notes)
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var tripName: String
+    @State private var startDate: Date = Date()
+    @State private var notes: String
+
+    init(suggestion: TripSuggestion, onConfirm: @escaping (String, Date, String) -> Void) {
+        self.suggestion = suggestion
+        self.onConfirm = onConfirm
+        _tripName = State(initialValue: suggestion.name)
+        _notes = State(initialValue: suggestion.description)
+    }
+
+    var endDate: Date {
+        Calendar.current.date(
+            byAdding: .day,
+            value: suggestion.duration.days,
+            to: startDate
+        ) ?? startDate
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                // Trip Summary
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Image(systemName: suggestion.category.systemImage)
+                                .foregroundStyle(.blue)
+                            Text(suggestion.category.displayName)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Text(suggestion.name)
+                            .font(.headline)
+
+                        HStack(spacing: 16) {
+                            Label("\(suggestion.destinations.count) stops", systemImage: "mappin")
+                            Label(suggestion.duration.displayName, systemImage: "clock")
+                            Label(suggestion.budgetLevel.dollarSigns, systemImage: "dollarsign.circle")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text("Adding to Your Trips")
+                }
+
+                // Customize Name
+                Section("Customize") {
+                    TextField("Trip Name", text: $tripName)
+
+                    DatePicker("Start Date", selection: $startDate, displayedComponents: .date)
+
+                    HStack {
+                        Text("End Date")
+                        Spacer()
+                        Text(formatDate(endDate))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                // Optional Notes
+                Section("Notes (Optional)") {
+                    TextEditor(text: $notes)
+                        .frame(minHeight: 60)
+                }
+
+                // What's Included
+                Section {
+                    ForEach(suggestion.destinations.prefix(3)) { destination in
+                        HStack {
+                            Text("\(destination.order + 1).")
+                                .foregroundStyle(.blue)
+                                .fontWeight(.semibold)
+                            Text(destination.name)
+                                .lineLimit(1)
+                        }
+                        .font(.subheadline)
+                    }
+
+                    if suggestion.destinations.count > 3 {
+                        Text("+ \(suggestion.destinations.count - 3) more destinations")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text("Included Destinations")
+                } footer: {
+                    Text("You can add, remove, or reorder destinations after adding to your trips.")
+                }
+            }
+            .navigationTitle("Add Trip")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add Trip") {
+                        onConfirm(tripName, startDate, notes)
+                    }
+                    .fontWeight(.semibold)
+                    .disabled(tripName.isEmpty)
+                }
+            }
+        }
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter.string(from: date)
     }
 }

@@ -196,6 +196,8 @@ struct SuggestedDestination: Identifiable, Codable, Equatable {
             longitude: longitude,
             notes: description,
             order: order,
+            estimatedStayMinutes: estimatedTimeMinutes,
+            tips: tips,
             travelMode: suggestedTravelMode
         )
     }
@@ -297,6 +299,11 @@ struct TripSuggestion: Identifiable, Codable, Equatable {
 
     /// Convert to Trip for adding to user's trips
     func toTrip(startDate: Date = Date()) -> Trip {
+        toTrip(name: name, startDate: startDate, notes: description)
+    }
+
+    /// Convert to Trip with custom name, start date, and notes
+    func toTrip(name customName: String, startDate: Date, notes customNotes: String) -> Trip {
         let endDate = Calendar.current.date(
             byAdding: .day,
             value: duration.days,
@@ -304,10 +311,12 @@ struct TripSuggestion: Identifiable, Codable, Equatable {
         ) ?? startDate
 
         return Trip(
-            name: name,
+            name: customName,
             startDate: startDate,
             endDate: endDate,
-            destinations: destinations.map { $0.toTripDestination() }
+            destinations: destinations.map { $0.toTripDestination() },
+            notes: customNotes,
+            sourceSuggestionName: name  // Keep original suggestion name for reference
         )
     }
 }

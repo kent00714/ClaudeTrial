@@ -9,6 +9,8 @@ struct Trip: Identifiable, Codable, Equatable {
     var destinations: [TripDestination]
     var createdAt: Date
     var updatedAt: Date
+    var notes: String
+    var sourceSuggestionName: String?  // Track if this trip came from a suggestion
 
     init(
         id: UUID = UUID(),
@@ -17,7 +19,9 @@ struct Trip: Identifiable, Codable, Equatable {
         endDate: Date,
         destinations: [TripDestination] = [],
         createdAt: Date = Date(),
-        updatedAt: Date = Date()
+        updatedAt: Date = Date(),
+        notes: String = "",
+        sourceSuggestionName: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -26,6 +30,12 @@ struct Trip: Identifiable, Codable, Equatable {
         self.destinations = destinations
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.notes = notes
+        self.sourceSuggestionName = sourceSuggestionName
+    }
+
+    var isFromSuggestion: Bool {
+        sourceSuggestionName != nil
     }
 
     var totalDestinations: Int {
@@ -70,6 +80,8 @@ struct TripDestination: Identifiable, Codable, Equatable {
     var plannedDeparture: Date?
     var notes: String
     var order: Int
+    var estimatedStayMinutes: Int?  // How long to spend at this destination
+    var tips: [String]              // Tips for this destination
 
     // Travel info from previous destination (calculated)
     var travelDurationMinutes: Int?
@@ -86,6 +98,8 @@ struct TripDestination: Identifiable, Codable, Equatable {
         plannedDeparture: Date? = nil,
         notes: String = "",
         order: Int = 0,
+        estimatedStayMinutes: Int? = nil,
+        tips: [String] = [],
         travelDurationMinutes: Int? = nil,
         travelDistanceMeters: Int? = nil,
         travelMode: TravelMode = .driving
@@ -99,9 +113,24 @@ struct TripDestination: Identifiable, Codable, Equatable {
         self.plannedDeparture = plannedDeparture
         self.notes = notes
         self.order = order
+        self.estimatedStayMinutes = estimatedStayMinutes
+        self.tips = tips
         self.travelDurationMinutes = travelDurationMinutes
         self.travelDistanceMeters = travelDistanceMeters
         self.travelMode = travelMode
+    }
+
+    var formattedEstimatedStay: String? {
+        guard let minutes = estimatedStayMinutes else { return nil }
+        let hours = minutes / 60
+        let mins = minutes % 60
+        if hours > 0 && mins > 0 {
+            return "\(hours)h \(mins)m"
+        } else if hours > 0 {
+            return "\(hours) hour\(hours > 1 ? "s" : "")"
+        } else {
+            return "\(mins) min"
+        }
     }
 
     var coordinate: CLLocationCoordinate2D {

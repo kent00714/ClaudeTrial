@@ -83,7 +83,9 @@ struct TripSuggestionsView: View {
             .sheet(item: $viewModel.selectedSuggestion) { suggestion in
                 SuggestionDetailView(
                     suggestion: suggestion,
-                    onAddToTrips: { viewModel.addSuggestionToTrips(suggestion) }
+                    onAddToTrips: { name, startDate, notes in
+                        viewModel.addSuggestionToTrips(suggestion, name: name, startDate: startDate, notes: notes)
+                    }
                 )
             }
             .alert("Trip Added!", isPresented: $viewModel.showingAddedAlert) {
@@ -812,6 +814,13 @@ class TripSuggestionsViewModel: ObservableObject {
 
     func addSuggestionToTrips(_ suggestion: TripSuggestion) {
         let trip = suggestion.toTrip()
+        tripViewModel.createTripFromSuggestion(trip)
+        selectedSuggestion = nil
+        showingAddedAlert = true
+    }
+
+    func addSuggestionToTrips(_ suggestion: TripSuggestion, name: String, startDate: Date, notes: String) {
+        let trip = suggestion.toTrip(name: name, startDate: startDate, notes: notes)
         tripViewModel.createTripFromSuggestion(trip)
         selectedSuggestion = nil
         showingAddedAlert = true

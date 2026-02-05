@@ -5,13 +5,18 @@ struct TripDetailView: View {
     let trip: Trip
     @ObservedObject var viewModel: TripViewModel
     @State private var showingAddDestination = false
+    @State private var showingEditTrip = false
+    @State private var showingEditDestination: TripDestination?
     @State private var mapCameraPosition: MapCameraPosition = .automatic
 
     var body: some View {
         VStack(spacing: 0) {
             // Map
             TripMapView(destinations: trip.destinations, cameraPosition: $mapCameraPosition)
-                .frame(height: 300)
+                .frame(height: 250)
+
+            // Trip info header (editable)
+            tripInfoHeader
 
             // Trip summary bar
             tripSummaryBar
@@ -24,6 +29,12 @@ struct TripDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
+                    Button {
+                        showingEditTrip = true
+                    } label: {
+                        Label("Edit Trip Details", systemImage: "pencil")
+                    }
+
                     Button {
                         showingAddDestination = true
                     } label: {
@@ -45,6 +56,12 @@ struct TripDetailView: View {
         .sheet(isPresented: $showingAddDestination) {
             AddDestinationView(trip: trip, viewModel: viewModel)
         }
+        .sheet(isPresented: $showingEditTrip) {
+            EditTripView(trip: trip, viewModel: viewModel)
+        }
+        .sheet(item: $showingEditDestination) { destination in
+            EditDestinationView(trip: trip, destination: destination, viewModel: viewModel)
+        }
         .overlay {
             if viewModel.isLoading {
                 ProgressView()
@@ -52,6 +69,61 @@ struct TripDetailView: View {
                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
             }
         }
+    }
+
+    private var tripInfoHeader: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Source badge if from suggestion
+            if let sourceName = trip.sourceSuggestionName {
+                HStack(spacing: 4) {
+                    Image(systemName: "sparkles")
+                    Text("Based on: \(sourceName)")
+                }
+                .font(.caption)
+                .foregroundStyle(.blue)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Color.blue.opacity(0.1))
+                .clipShape(Capsule())
+            }
+
+            // Date range
+            HStack {
+                Image(systemName: "calendar")
+                    .foregroundStyle(.secondary)
+                Text(formatDateRange(start: trip.startDate, end: trip.endDate))
+                    .font(.subheadline)
+
+                Spacer()
+
+                Button {
+                    showingEditTrip = true
+                } label: {
+                    Image(systemName: "pencil.circle")
+                        .font(.title3)
+                }
+            }
+
+            // Notes preview
+            if !trip.notes.isEmpty {
+                Text(trip.notes)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(Color(.systemBackground))
+    }
+
+    private func formatDateRange(start: Date, end: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        if Calendar.current.isDate(start, equalTo: end, toGranularity: .day) {
+            return formatter.string(from: start)
+        }
+        return "\(formatter.string(from: start)) - \(formatter.string(from: end))"
     }
 
     private var tripSummaryBar: some View {
@@ -93,6 +165,10 @@ struct TripDetailView: View {
                         isFirst: index == 0,
                         isLast: index == trip.destinations.count - 1
                     )
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        showingEditDestination = destination
+                    }
                 }
                 .onDelete { offsets in
                     Task {
@@ -148,7 +224,7 @@ struct DestinationRowView: View {
                         .foregroundStyle(.white)
                 }
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(destination.name)
                         .font(.headline)
 
@@ -157,18 +233,49 @@ struct DestinationRowView: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
 
+                    // Estimated stay time
+                    if let stayTime = destination.formattedEstimatedStay {
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock")
+                            Text("Spend: \(stayTime)")
+                        }
+                        .font(.caption2)
+                        .foregroundStyle(.blue)
+                    }
+
                     if !destination.notes.isEmpty {
                         Text(destination.notes)
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
-                            .lineLimit(1)
+                            .lineLimit(2)
+                    }
+
+                    // Tips preview
+                    if let firstTip = destination.tips.first {
+                        HStack(alignment: .top, spacing: 4) {
+                            Image(systemName: "lightbulb.fill")
+                                .foregroundStyle(.yellow)
+                            Text(firstTip)
+                                .lineLimit(1)
+                        }
+                        .font(.caption2)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.yellow.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
                     }
                 }
 
                 Spacer()
 
-                Image(systemName: "line.3.horizontal")
-                    .foregroundStyle(.tertiary)
+                VStack {
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                    Spacer()
+                    Image(systemName: "line.3.horizontal")
+                        .foregroundStyle(.tertiary)
+                }
             }
         }
         .padding(.vertical, 4)
@@ -213,6 +320,231 @@ struct TripMapView: View {
     }
 }
 
+// MARK: - Edit Trip View
+
+struct EditTripView: View {
+    let trip: Trip
+    @ObservedObject var viewModel: TripViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var name: String
+    @State private var startDate: Date
+    @State private var endDate: Date
+    @State private var notes: String
+
+    init(trip: Trip, viewModel: TripViewModel) {
+        self.trip = trip
+        self.viewModel = viewModel
+        _name = State(initialValue: trip.name)
+        _startDate = State(initialValue: trip.startDate)
+        _endDate = State(initialValue: trip.endDate)
+        _notes = State(initialValue: trip.notes)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Trip Details") {
+                    TextField("Trip Name", text: $name)
+
+                    DatePicker("Start Date", selection: $startDate, displayedComponents: .date)
+
+                    DatePicker("End Date", selection: $endDate, in: startDate..., displayedComponents: .date)
+                }
+
+                Section("Notes") {
+                    TextEditor(text: $notes)
+                        .frame(minHeight: 100)
+                }
+
+                if trip.isFromSuggestion {
+                    Section {
+                        HStack {
+                            Image(systemName: "sparkles")
+                                .foregroundStyle(.blue)
+                            VStack(alignment: .leading) {
+                                Text("Based on suggestion")
+                                    .font(.subheadline)
+                                Text(trip.sourceSuggestionName ?? "")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    } footer: {
+                        Text("This trip was created from a curated suggestion. You can customize it freely!")
+                    }
+                }
+            }
+            .navigationTitle("Edit Trip")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        saveChanges()
+                    }
+                    .disabled(name.isEmpty)
+                }
+            }
+        }
+    }
+
+    private func saveChanges() {
+        var updatedTrip = trip
+        updatedTrip.name = name
+        updatedTrip.startDate = startDate
+        updatedTrip.endDate = endDate
+        updatedTrip.notes = notes
+        updatedTrip.updatedAt = Date()
+        viewModel.updateTrip(updatedTrip)
+        dismiss()
+    }
+}
+
+// MARK: - Edit Destination View
+
+struct EditDestinationView: View {
+    let trip: Trip
+    let destination: TripDestination
+    @ObservedObject var viewModel: TripViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var name: String
+    @State private var notes: String
+    @State private var travelMode: TravelMode
+    @State private var estimatedStayMinutes: Int
+
+    init(trip: Trip, destination: TripDestination, viewModel: TripViewModel) {
+        self.trip = trip
+        self.destination = destination
+        self.viewModel = viewModel
+        _name = State(initialValue: destination.name)
+        _notes = State(initialValue: destination.notes)
+        _travelMode = State(initialValue: destination.travelMode)
+        _estimatedStayMinutes = State(initialValue: destination.estimatedStayMinutes ?? 60)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Destination") {
+                    TextField("Name", text: $name)
+
+                    Text(destination.address)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("Time at Location") {
+                    Stepper(value: $estimatedStayMinutes, in: 15...480, step: 15) {
+                        HStack {
+                            Text("Estimated Stay")
+                            Spacer()
+                            Text(formatMinutes(estimatedStayMinutes))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                Section("Travel Mode") {
+                    Picker("How to get here", selection: $travelMode) {
+                        ForEach(TravelMode.allCases) { mode in
+                            Label(mode.displayName, systemImage: mode.systemImage)
+                                .tag(mode)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                }
+
+                Section("Notes") {
+                    TextEditor(text: $notes)
+                        .frame(minHeight: 80)
+                }
+
+                // Tips section (read-only from suggestion)
+                if !destination.tips.isEmpty {
+                    Section("Tips") {
+                        ForEach(destination.tips, id: \.self) { tip in
+                            HStack(alignment: .top, spacing: 8) {
+                                Image(systemName: "lightbulb.fill")
+                                    .foregroundStyle(.yellow)
+                                Text(tip)
+                                    .font(.subheadline)
+                            }
+                        }
+                    }
+                }
+
+                Section {
+                    Button(role: .destructive) {
+                        removeDestination()
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text("Remove from Trip")
+                            Spacer()
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Edit Destination")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        saveChanges()
+                    }
+                    .disabled(name.isEmpty)
+                }
+            }
+        }
+    }
+
+    private func formatMinutes(_ minutes: Int) -> String {
+        let hours = minutes / 60
+        let mins = minutes % 60
+        if hours > 0 && mins > 0 {
+            return "\(hours)h \(mins)m"
+        } else if hours > 0 {
+            return "\(hours) hour\(hours > 1 ? "s" : "")"
+        } else {
+            return "\(mins) min"
+        }
+    }
+
+    private func saveChanges() {
+        guard let index = trip.destinations.firstIndex(where: { $0.id == destination.id }) else {
+            dismiss()
+            return
+        }
+
+        var updatedTrip = trip
+        updatedTrip.destinations[index].name = name
+        updatedTrip.destinations[index].notes = notes
+        updatedTrip.destinations[index].travelMode = travelMode
+        updatedTrip.destinations[index].estimatedStayMinutes = estimatedStayMinutes
+        updatedTrip.updatedAt = Date()
+        viewModel.updateTrip(updatedTrip)
+        dismiss()
+    }
+
+    private func removeDestination() {
+        Task {
+            await viewModel.removeDestination(destination, from: trip)
+            dismiss()
+        }
+    }
+}
+
 #Preview {
     NavigationStack {
         TripDetailView(
@@ -226,7 +558,9 @@ struct TripMapView: View {
                         address: "4-2-8 Shibakoen, Minato City, Tokyo",
                         latitude: 35.6586,
                         longitude: 139.7454,
-                        order: 0
+                        order: 0,
+                        estimatedStayMinutes: 90,
+                        tips: ["Visit at sunset for amazing views"]
                     ),
                     TripDestination(
                         name: "Senso-ji Temple",
@@ -237,7 +571,8 @@ struct TripMapView: View {
                         travelDurationMinutes: 25,
                         travelDistanceMeters: 8500
                     )
-                ]
+                ],
+                sourceSuggestionName: "Essential Tokyo"
             ),
             viewModel: TripViewModel()
         )
