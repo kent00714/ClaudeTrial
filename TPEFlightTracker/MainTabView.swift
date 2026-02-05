@@ -39,6 +39,13 @@ struct MainTabView: View {
                     Label("Taxi", systemImage: "car.side.fill")
                 }
                 .tag(3)
+
+            // Hotels Tab
+            HotelSearchView()
+                .tabItem {
+                    Label("Hotels", systemImage: "bed.double.fill")
+                }
+                .tag(4)
         }
         .onOpenURL { url in
             handleIncomingURL(url)
