@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+import UIKit
 
 struct TripDetailView: View {
     let trip: Trip
@@ -10,6 +11,11 @@ struct TripDetailView: View {
     @State private var showingEditDestination: TripDestination?
     @State private var showingFlightDetail = false
     @State private var mapCameraPosition: MapCameraPosition = .automatic
+    @State private var showingExportOptions = false
+    @State private var exportedFileURL: URL?
+    @State private var showingExportShare = false
+    @State private var exportError: String?
+    @State private var showingExportError = false
 
     init(trip: Trip, viewModel: TripViewModel, flightViewModel: FlightViewModel = FlightViewModel()) {
         self.trip = trip
@@ -42,24 +48,42 @@ struct TripDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button {
-                        showingEditTrip = true
-                    } label: {
-                        Label("Edit Trip Details", systemImage: "pencil")
-                    }
-
-                    Button {
-                        showingAddDestination = true
-                    } label: {
-                        Label("Add Destination", systemImage: "plus")
-                    }
-
-                    Button {
-                        Task {
-                            await viewModel.recalculateAllRoutes(for: trip)
+                    // Share Section
+                    Section {
+                        ShareLink(item: trip.shareableText) {
+                            Label("Share Trip", systemImage: "square.and.arrow.up")
                         }
-                    } label: {
-                        Label("Recalculate Routes", systemImage: "arrow.triangle.2.circlepath")
+
+                        Button {
+                            exportTripAsFile()
+                        } label: {
+                            Label("Export as File", systemImage: "doc.badge.arrow.up")
+                        }
+                    }
+
+                    Divider()
+
+                    // Edit Section
+                    Section {
+                        Button {
+                            showingEditTrip = true
+                        } label: {
+                            Label("Edit Trip Details", systemImage: "pencil")
+                        }
+
+                        Button {
+                            showingAddDestination = true
+                        } label: {
+                            Label("Add Destination", systemImage: "plus")
+                        }
+
+                        Button {
+                            Task {
+                                await viewModel.recalculateAllRoutes(for: trip)
+                            }
+                        } label: {
+                            Label("Recalculate Routes", systemImage: "arrow.triangle.2.circlepath")
+                        }
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
@@ -74,6 +98,16 @@ struct TripDetailView: View {
         }
         .sheet(item: $showingEditDestination) { destination in
             EditDestinationView(trip: trip, destination: destination, viewModel: viewModel)
+        }
+        .sheet(isPresented: $showingExportShare) {
+            if let url = exportedFileURL {
+                ShareSheet(activityItems: [url])
+            }
+        }
+        .alert("Export Failed", isPresented: $showingExportError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(exportError ?? "Unknown error occurred")
         }
         .overlay {
             if viewModel.isLoading {
@@ -194,6 +228,20 @@ struct TripDetailView: View {
             return formatter.string(from: start)
         }
         return "\(formatter.string(from: start)) - \(formatter.string(from: end))"
+    }
+
+    private func exportTripAsFile() {
+        do {
+            let jsonData = try trip.exportAsJSON()
+            let tempDir = FileManager.default.temporaryDirectory
+            let fileURL = tempDir.appendingPathComponent(trip.exportFilename)
+            try jsonData.write(to: fileURL)
+            exportedFileURL = fileURL
+            showingExportShare = true
+        } catch {
+            exportError = error.localizedDescription
+            showingExportError = true
+        }
     }
 
     private var tripSummaryBar: some View {
@@ -634,6 +682,25 @@ struct EditDestinationView: View {
             await viewModel.removeDestination(destination, from: trip)
             dismiss()
         }
+    }
+}
+
+// MARK: - Share Sheet (UIActivityViewController wrapper)
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    var applicationActivities: [UIActivity]? = nil
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(
+            activityItems: activityItems,
+            applicationActivities: applicationActivities
+        )
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {
+        // No update needed
     }
 }
 

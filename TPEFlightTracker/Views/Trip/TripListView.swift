@@ -1,9 +1,15 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct TripListView: View {
     @ObservedObject var viewModel: TripViewModel
     @StateObject private var flightViewModel = FlightViewModel()
     @State private var showingAddTrip = false
+    @State private var showingImportPicker = false
+    @State private var importError: String?
+    @State private var showingImportError = false
+    @State private var showingImportSuccess = false
+    @State private var importedTripName: String = ""
 
     private var dateFormatter: DateFormatter {
         let f = DateFormatter()
@@ -22,6 +28,13 @@ struct TripListView: View {
             }
             .navigationTitle("My Trips")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showingImportPicker = true
+                    } label: {
+                        Image(systemName: "square.and.arrow.down")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showingAddTrip = true
@@ -32,6 +45,23 @@ struct TripListView: View {
             }
             .sheet(isPresented: $showingAddTrip) {
                 AddTripView(viewModel: viewModel)
+            }
+            .fileImporter(
+                isPresented: $showingImportPicker,
+                allowedContentTypes: [.json],
+                allowsMultipleSelection: false
+            ) { result in
+                handleImportResult(result)
+            }
+            .alert("Import Failed", isPresented: $showingImportError) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(importError ?? "Unknown error occurred")
+            }
+            .alert("Trip Imported", isPresented: $showingImportSuccess) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("'\(importedTripName)' has been added to your trips.")
             }
         }
     }
@@ -66,6 +96,52 @@ struct TripListView: View {
     private func deleteTrips(at offsets: IndexSet) {
         for index in offsets {
             viewModel.deleteTrip(viewModel.trips[index])
+        }
+    }
+
+    private func handleImportResult(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+
+            // Start accessing security-scoped resource
+            guard url.startAccessingSecurityScopedResource() else {
+                importError = "Unable to access the selected file."
+                showingImportError = true
+                return
+            }
+
+            defer { url.stopAccessingSecurityScopedResource() }
+
+            do {
+                let data = try Data(contentsOf: url)
+                var importedTrip = try Trip.importFromJSON(data)
+
+                // Create a new ID to avoid conflicts
+                importedTrip = Trip(
+                    id: UUID(),
+                    name: importedTrip.name,
+                    startDate: importedTrip.startDate,
+                    endDate: importedTrip.endDate,
+                    destinations: importedTrip.destinations,
+                    createdAt: Date(),
+                    updatedAt: Date(),
+                    notes: importedTrip.notes,
+                    sourceSuggestionName: importedTrip.sourceSuggestionName,
+                    linkedFlightNumber: importedTrip.linkedFlightNumber
+                )
+
+                viewModel.createTripFromSuggestion(importedTrip)
+                importedTripName = importedTrip.name
+                showingImportSuccess = true
+            } catch {
+                importError = "Failed to import trip: \(error.localizedDescription)"
+                showingImportError = true
+            }
+
+        case .failure(let error):
+            importError = error.localizedDescription
+            showingImportError = true
         }
     }
 }

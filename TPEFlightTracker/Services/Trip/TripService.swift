@@ -49,15 +49,17 @@ class TripService: TripServiceProtocol {
     func updateTrip(_ trip: Trip) {
         var trips = loadTrips()
         if let index = trips.firstIndex(where: { $0.id == trip.id }) {
-            var updatedTrip = trip
-            updatedTrip = Trip(
+            let updatedTrip = Trip(
                 id: trip.id,
                 name: trip.name,
                 startDate: trip.startDate,
                 endDate: trip.endDate,
                 destinations: trip.destinations,
                 createdAt: trip.createdAt,
-                updatedAt: Date()
+                updatedAt: Date(),
+                notes: trip.notes,
+                sourceSuggestionName: trip.sourceSuggestionName,
+                linkedFlightNumber: trip.linkedFlightNumber
             )
             trips[index] = updatedTrip
             saveTrips(trips)

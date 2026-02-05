@@ -167,6 +167,90 @@ struct TripDestination: Identifiable, Codable, Equatable {
     }
 }
 
+// MARK: - Trip Sharing Extensions
+
+extension Trip {
+    /// Generate a shareable text summary of the trip
+    var shareableText: String {
+        var text = "📍 \(name)\n"
+        text += "📅 \(formattedDateRange)\n"
+
+        if hasLinkedFlight, let flight = linkedFlightNumber {
+            text += "✈️ Flight: \(flight)\n"
+        }
+
+        if !destinations.isEmpty {
+            text += "\n🗺️ Itinerary (\(totalDestinations) stops):\n"
+            for (index, dest) in destinations.enumerated() {
+                text += "\(index + 1). \(dest.name)"
+                if let stay = dest.formattedEstimatedStay {
+                    text += " (\(stay))"
+                }
+                text += "\n"
+            }
+        }
+
+        if totalDistanceMeters > 0 || totalDurationMinutes > 0 {
+            text += "\n📊 Total: "
+            if totalDistanceMeters > 0 {
+                text += formattedTotalDistance
+            }
+            if totalDurationMinutes > 0 {
+                text += totalDistanceMeters > 0 ? " • " : ""
+                text += formattedTotalDuration
+            }
+            text += "\n"
+        }
+
+        if !notes.isEmpty {
+            text += "\n📝 Notes: \(notes)\n"
+        }
+
+        if isFromSuggestion, let source = sourceSuggestionName {
+            text += "\n✨ Based on: \(source)"
+        }
+
+        text += "\n\n— Shared from TPE Flight Tracker"
+
+        return text
+    }
+
+    private var formattedDateRange: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        if Calendar.current.isDate(startDate, equalTo: endDate, toGranularity: .day) {
+            return formatter.string(from: startDate)
+        }
+        return "\(formatter.string(from: startDate)) - \(formatter.string(from: endDate))"
+    }
+
+    /// Export trip as JSON data
+    func exportAsJSON() throws -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        return try encoder.encode(self)
+    }
+
+    /// Import trip from JSON data
+    static func importFromJSON(_ data: Data) throws -> Trip {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(Trip.self, from: data)
+    }
+
+    /// Generate filename for export
+    var exportFilename: String {
+        let sanitizedName = name
+            .replacingOccurrences(of: " ", with: "_")
+            .replacingOccurrences(of: "/", with: "-")
+            .filter { $0.isLetter || $0.isNumber || $0 == "_" || $0 == "-" }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd"
+        return "trip_\(sanitizedName)_\(formatter.string(from: startDate)).json"
+    }
+}
+
 enum TravelMode: String, Codable, CaseIterable, Identifiable {
     case driving
     case walking

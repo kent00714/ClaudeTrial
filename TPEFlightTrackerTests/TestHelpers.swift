@@ -220,14 +220,20 @@ enum TripTestData {
         name: String = "Taipei Trip",
         startDate: Date = Date(),
         endDate: Date = Date().addingTimeInterval(86400 * 3),
-        destinations: [TripDestination] = []
+        destinations: [TripDestination] = [],
+        notes: String = "",
+        sourceSuggestionName: String? = nil,
+        linkedFlightNumber: String? = nil
     ) -> Trip {
         Trip(
             id: id,
             name: name,
             startDate: startDate,
             endDate: endDate,
-            destinations: destinations
+            destinations: destinations,
+            notes: notes,
+            sourceSuggestionName: sourceSuggestionName,
+            linkedFlightNumber: linkedFlightNumber
         )
     }
 

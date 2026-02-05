@@ -186,4 +186,125 @@ final class TripModelTests: XCTestCase {
             XCTAssertEqual(decoded, mode)
         }
     }
+
+    // MARK: - Trip Sharing Tests
+
+    func testShareableTextBasic() {
+        let trip = TripTestData.makeTrip(name: "Weekend Getaway")
+        let text = trip.shareableText
+
+        XCTAssertTrue(text.contains("Weekend Getaway"))
+        XCTAssertTrue(text.contains("TPE Flight Tracker"))
+    }
+
+    func testShareableTextWithDestinations() {
+        let trip = TripTestData.sampleTrip
+        let text = trip.shareableText
+
+        XCTAssertTrue(text.contains("Taiwan Adventure"))
+        XCTAssertTrue(text.contains("3 stops"))
+        XCTAssertTrue(text.contains("Taipei 101"))
+        XCTAssertTrue(text.contains("Taoyuan Airport"))
+        XCTAssertTrue(text.contains("Shilin Night Market"))
+    }
+
+    func testShareableTextWithLinkedFlight() {
+        let trip = TripTestData.makeTrip(
+            name: "Flight Trip",
+            linkedFlightNumber: "CI123"
+        )
+        let text = trip.shareableText
+
+        XCTAssertTrue(text.contains("Flight: CI123"))
+    }
+
+    func testShareableTextWithNotes() {
+        let trip = TripTestData.makeTrip(
+            name: "Noted Trip",
+            notes: "Remember to bring umbrella"
+        )
+        let text = trip.shareableText
+
+        XCTAssertTrue(text.contains("Notes: Remember to bring umbrella"))
+    }
+
+    func testShareableTextFromSuggestion() {
+        let trip = TripTestData.makeTrip(
+            name: "Suggested Trip",
+            sourceSuggestionName: "Best of Taipei"
+        )
+        let text = trip.shareableText
+
+        XCTAssertTrue(text.contains("Based on: Best of Taipei"))
+    }
+
+    func testExportAsJSON() throws {
+        let trip = TripTestData.sampleTrip
+        let jsonData = try trip.exportAsJSON()
+
+        // Verify it's valid JSON
+        let jsonObject = try JSONSerialization.jsonObject(with: jsonData)
+        XCTAssertTrue(jsonObject is [String: Any])
+
+        // Verify it can be imported back
+        let imported = try Trip.importFromJSON(jsonData)
+        XCTAssertEqual(imported.name, trip.name)
+        XCTAssertEqual(imported.destinations.count, trip.destinations.count)
+    }
+
+    func testImportFromJSON() throws {
+        let original = TripTestData.makeTrip(
+            name: "Import Test",
+            notes: "Test notes",
+            sourceSuggestionName: "Test Source",
+            linkedFlightNumber: "BR001"
+        )
+
+        let jsonData = try original.exportAsJSON()
+        let imported = try Trip.importFromJSON(jsonData)
+
+        XCTAssertEqual(imported.name, "Import Test")
+        XCTAssertEqual(imported.notes, "Test notes")
+        XCTAssertEqual(imported.sourceSuggestionName, "Test Source")
+        XCTAssertEqual(imported.linkedFlightNumber, "BR001")
+    }
+
+    func testExportFilename() {
+        let calendar = Calendar.current
+        let date = calendar.date(from: DateComponents(year: 2024, month: 6, day: 15))!
+        let trip = TripTestData.makeTrip(name: "My Summer Trip", startDate: date)
+
+        XCTAssertEqual(trip.exportFilename, "trip_My_Summer_Trip_20240615.json")
+    }
+
+    func testExportFilenameWithSpecialCharacters() {
+        let date = Calendar.current.date(from: DateComponents(year: 2024, month: 1, day: 1))!
+        let trip = TripTestData.makeTrip(name: "Trip/With Special @#$ Chars!", startDate: date)
+
+        // Should sanitize special characters
+        let filename = trip.exportFilename
+        XCTAssertTrue(filename.hasSuffix(".json"))
+        XCTAssertFalse(filename.contains("/"))
+        XCTAssertFalse(filename.contains("@"))
+        XCTAssertFalse(filename.contains("#"))
+    }
+
+    func testHasLinkedFlight() {
+        let tripWithFlight = TripTestData.makeTrip(linkedFlightNumber: "CI123")
+        XCTAssertTrue(tripWithFlight.hasLinkedFlight)
+
+        let tripWithoutFlight = TripTestData.makeTrip()
+        XCTAssertFalse(tripWithoutFlight.hasLinkedFlight)
+
+        let tripWithEmptyFlight = TripTestData.makeTrip(linkedFlightNumber: "")
+        XCTAssertFalse(tripWithEmptyFlight.hasLinkedFlight)
+    }
+
+    func testIsFromSuggestion() {
+        let tripFromSuggestion = TripTestData.makeTrip(sourceSuggestionName: "Best of Taipei")
+        XCTAssertTrue(tripFromSuggestion.isFromSuggestion)
+
+        let regularTrip = TripTestData.makeTrip()
+        XCTAssertFalse(regularTrip.isFromSuggestion)
+    }
 }
