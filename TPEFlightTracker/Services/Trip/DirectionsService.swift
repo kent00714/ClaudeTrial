@@ -1,5 +1,6 @@
 import Foundation
 import CoreLocation
+import MapKit
 
 protocol DirectionsServiceProtocol {
     func calculateRoute(
@@ -12,167 +13,87 @@ protocol DirectionsServiceProtocol {
 struct RouteResult {
     let distanceMeters: Int
     let durationSeconds: Int
-    let polyline: String?
+    let polyline: MKPolyline?
 
     var durationMinutes: Int {
         durationSeconds / 60
     }
 }
 
+/// Directions service using Apple MapKit (completely free, no API key required)
 class DirectionsService: DirectionsServiceProtocol {
-
-    private let session: URLSession
-    private let apiKey: String
-
-    init(
-        session: URLSession = .shared,
-        apiKey: String = APIConfig.googleMapsAPIKey
-    ) {
-        self.session = session
-        self.apiKey = apiKey
-    }
 
     func calculateRoute(
         from origin: CLLocationCoordinate2D,
         to destination: CLLocationCoordinate2D,
         mode: TravelMode
     ) async throws -> RouteResult {
-        // Fall back to mock/estimate if no API key configured
-        guard apiKey != "YOUR_GOOGLE_API_KEY_HERE" else {
-            return estimateRoute(from: origin, to: destination, mode: mode)
+        let request = MKDirections.Request()
+        request.source = MKMapItem(placemark: MKPlacemark(coordinate: origin))
+        request.destination = MKMapItem(placemark: MKPlacemark(coordinate: destination))
+        request.transportType = mode.mkTransportType
+
+        let directions = MKDirections(request: request)
+
+        do {
+            let response = try await directions.calculate()
+
+            guard let route = response.routes.first else {
+                throw DirectionsError.noRouteFound
+            }
+
+            return RouteResult(
+                distanceMeters: Int(route.distance),
+                durationSeconds: Int(route.expectedTravelTime),
+                polyline: route.polyline
+            )
+        } catch let error as MKError {
+            throw DirectionsError.mapKitError(error)
+        } catch let error as DirectionsError {
+            throw error
+        } catch {
+            throw DirectionsError.unknown(error)
         }
-
-        let originStr = "\(origin.latitude),\(origin.longitude)"
-        let destStr = "\(destination.latitude),\(destination.longitude)"
-
-        var components = URLComponents(string: APIConfig.googleDirectionsBaseURL)!
-        components.queryItems = [
-            URLQueryItem(name: "origin", value: originStr),
-            URLQueryItem(name: "destination", value: destStr),
-            URLQueryItem(name: "mode", value: mode.googleMapsMode),
-            URLQueryItem(name: "key", value: apiKey)
-        ]
-
-        guard let url = components.url else {
-            throw DirectionsError.invalidURL
-        }
-
-        let (data, response) = try await session.data(from: url)
-
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw DirectionsError.invalidResponse
-        }
-
-        guard httpResponse.statusCode == 200 else {
-            throw DirectionsError.httpError(statusCode: httpResponse.statusCode)
-        }
-
-        let decoded = try JSONDecoder().decode(GoogleDirectionsResponse.self, from: data)
-
-        guard decoded.status == "OK",
-              let route = decoded.routes.first,
-              let leg = route.legs.first else {
-            throw DirectionsError.noRouteFound(status: decoded.status)
-        }
-
-        return RouteResult(
-            distanceMeters: leg.distance.value,
-            durationSeconds: leg.duration.value,
-            polyline: route.overviewPolyline.points
-        )
     }
+}
 
-    // MARK: - Fallback Estimation (no API key)
+// MARK: - Travel Mode Extension
 
-    private func estimateRoute(
-        from origin: CLLocationCoordinate2D,
-        to destination: CLLocationCoordinate2D,
-        mode: TravelMode
-    ) -> RouteResult {
-        let originLoc = CLLocation(latitude: origin.latitude, longitude: origin.longitude)
-        let destLoc = CLLocation(latitude: destination.latitude, longitude: destination.longitude)
-        let straightLineMeters = originLoc.distance(from: destLoc)
-
-        // Rough estimate: actual road distance is ~1.3x straight line
-        let estimatedDistance = Int(straightLineMeters * 1.3)
-
-        // Estimate speed based on mode
-        let speedKmh: Double
-        switch mode {
-        case .driving: speedKmh = 40 // city average
-        case .walking: speedKmh = 5
-        case .bicycling: speedKmh = 15
-        case .transit: speedKmh = 25
+extension TravelMode {
+    var mkTransportType: MKDirectionsTransportType {
+        switch self {
+        case .driving: return .automobile
+        case .walking: return .walking
+        case .bicycling: return .walking // MapKit doesn't support bicycling, fallback to walking
+        case .transit: return .transit
         }
-
-        let durationSeconds = Int((Double(estimatedDistance) / 1000.0 / speedKmh) * 3600)
-
-        return RouteResult(
-            distanceMeters: estimatedDistance,
-            durationSeconds: durationSeconds,
-            polyline: nil
-        )
     }
 }
 
 // MARK: - Errors
 
 enum DirectionsError: LocalizedError {
-    case invalidURL
-    case invalidResponse
-    case httpError(statusCode: Int)
-    case noRouteFound(status: String)
+    case noRouteFound
+    case mapKitError(MKError)
+    case unknown(Error)
 
     var errorDescription: String? {
         switch self {
-        case .invalidURL:
-            return "Invalid directions URL"
-        case .invalidResponse:
-            return "Invalid response from directions service"
-        case .httpError(let code):
-            return "Directions API error (HTTP \(code))"
-        case .noRouteFound(let status):
-            return "No route found: \(status)"
+        case .noRouteFound:
+            return "No route found between these locations"
+        case .mapKitError(let error):
+            switch error.code {
+            case .placemarkNotFound:
+                return "Location not found"
+            case .directionsNotFound:
+                return "No directions available for this route"
+            case .serverFailure:
+                return "Server error, please try again"
+            default:
+                return "Directions error: \(error.localizedDescription)"
+            }
+        case .unknown(let error):
+            return error.localizedDescription
         }
     }
-}
-
-// MARK: - Google Directions API Response Models
-
-struct GoogleDirectionsResponse: Codable {
-    let status: String
-    let routes: [GoogleRoute]
-}
-
-struct GoogleRoute: Codable {
-    let legs: [GoogleLeg]
-    let overviewPolyline: GooglePolyline
-
-    enum CodingKeys: String, CodingKey {
-        case legs
-        case overviewPolyline = "overview_polyline"
-    }
-}
-
-struct GoogleLeg: Codable {
-    let distance: GoogleValue
-    let duration: GoogleValue
-    let startAddress: String?
-    let endAddress: String?
-
-    enum CodingKeys: String, CodingKey {
-        case distance
-        case duration
-        case startAddress = "start_address"
-        case endAddress = "end_address"
-    }
-}
-
-struct GoogleValue: Codable {
-    let text: String
-    let value: Int
-}
-
-struct GooglePolyline: Codable {
-    let points: String
 }
