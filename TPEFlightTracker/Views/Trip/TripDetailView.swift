@@ -454,9 +454,11 @@ struct DestinationRowView: View {
 struct TripMapView: View {
     let destinations: [TripDestination]
     @Binding var cameraPosition: MapCameraPosition
+    @StateObject private var routeManager = TripRouteManager()
 
     var body: some View {
         Map(position: $cameraPosition) {
+            // Destination markers
             ForEach(Array(destinations.enumerated()), id: \.element.id) { index, destination in
                 Annotation(
                     destination.name,
@@ -474,17 +476,132 @@ struct TripMapView: View {
                 }
             }
 
-            // Draw lines between destinations
-            if destinations.count > 1 {
+            // Draw actual routes between destinations
+            ForEach(routeManager.routes) { route in
+                MapPolyline(route.polyline)
+                    .stroke(route.travelMode.routeColor, style: StrokeStyle(
+                        lineWidth: 4,
+                        lineCap: .round,
+                        lineJoin: .round
+                    ))
+            }
+
+            // Fallback to straight lines while routes are loading
+            if routeManager.routes.isEmpty && destinations.count > 1 {
                 let coordinates = destinations.map(\.coordinate)
                 MapPolyline(coordinates: coordinates)
-                    .stroke(Color.accentColor, lineWidth: 3)
+                    .stroke(Color.accentColor.opacity(0.5), style: StrokeStyle(
+                        lineWidth: 2,
+                        lineCap: .round,
+                        dash: [8, 4]
+                    ))
             }
         }
         .mapStyle(.standard(elevation: .realistic))
         .mapControls {
             MapCompass()
             MapScaleView()
+        }
+        .overlay(alignment: .topTrailing) {
+            if routeManager.isLoading {
+                ProgressView()
+                    .padding(8)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+                    .padding(8)
+            }
+        }
+        .task {
+            await routeManager.calculateRoutes(for: destinations)
+        }
+        .onChange(of: destinations) { _, newDestinations in
+            Task {
+                await routeManager.calculateRoutes(for: newDestinations)
+            }
+        }
+    }
+}
+
+// MARK: - Trip Route Manager
+
+@MainActor
+class TripRouteManager: ObservableObject {
+    @Published var routes: [TripRoute] = []
+    @Published var isLoading = false
+    @Published var errorMessage: String?
+
+    private let directionsService: DirectionsServiceProtocol
+
+    init(directionsService: DirectionsServiceProtocol = DirectionsService()) {
+        self.directionsService = directionsService
+    }
+
+    func calculateRoutes(for destinations: [TripDestination]) async {
+        guard destinations.count > 1 else {
+            routes = []
+            return
+        }
+
+        isLoading = true
+        errorMessage = nil
+
+        var newRoutes: [TripRoute] = []
+
+        for i in 0..<(destinations.count - 1) {
+            let from = destinations[i]
+            let to = destinations[i + 1]
+
+            do {
+                let result = try await directionsService.calculateRoute(
+                    from: from.coordinate,
+                    to: to.coordinate,
+                    mode: to.travelMode
+                )
+
+                if let polyline = result.polyline {
+                    let route = TripRoute(
+                        id: "\(from.id)-\(to.id)",
+                        fromDestinationId: from.id,
+                        toDestinationId: to.id,
+                        polyline: polyline,
+                        travelMode: to.travelMode,
+                        distanceMeters: result.distanceMeters,
+                        durationMinutes: result.durationMinutes
+                    )
+                    newRoutes.append(route)
+                }
+            } catch {
+                print("Error calculating route from \(from.name) to \(to.name): \(error)")
+                // Continue with other routes even if one fails
+            }
+        }
+
+        routes = newRoutes
+        isLoading = false
+    }
+}
+
+// MARK: - Trip Route Model
+
+struct TripRoute: Identifiable {
+    let id: String
+    let fromDestinationId: UUID
+    let toDestinationId: UUID
+    let polyline: MKPolyline
+    let travelMode: TravelMode
+    let distanceMeters: Int
+    let durationMinutes: Int
+}
+
+// MARK: - Travel Mode Route Color
+
+extension TravelMode {
+    var routeColor: Color {
+        switch self {
+        case .driving: return .blue
+        case .walking: return .green
+        case .bicycling: return .orange
+        case .transit: return .purple
+        case .taxi: return .yellow
         }
     }
 }

@@ -9,6 +9,7 @@ struct SuggestionDetailView: View {
     @State private var selectedDestination: SuggestedDestination?
     @State private var showingCustomizeSheet = false
     @State private var mapRegion: MKCoordinateRegion
+    @StateObject private var routeManager = SuggestionRouteManager()
 
     init(suggestion: TripSuggestion, onAddToTrips: @escaping (String, Date, String, String?) -> Void) {
         self.suggestion = suggestion
@@ -107,9 +108,14 @@ struct SuggestionDetailView: View {
     // MARK: - Map Section
 
     private var mapSection: some View {
-        Map(coordinateRegion: .constant(mapRegion), annotationItems: suggestion.destinations) { destination in
-            MapAnnotation(coordinate: destination.coordinate) {
-                VStack(spacing: 2) {
+        Map(initialPosition: .region(mapRegion)) {
+            // Destination markers
+            ForEach(suggestion.destinations) { destination in
+                Annotation(
+                    destination.name,
+                    coordinate: destination.coordinate,
+                    anchor: .bottom
+                ) {
                     ZStack {
                         Circle()
                             .fill(.white)
@@ -121,14 +127,46 @@ struct SuggestionDetailView: View {
                             .fontWeight(.bold)
                             .foregroundStyle(.blue)
                     }
-                }
-                .onTapGesture {
-                    selectedDestination = destination
+                    .onTapGesture {
+                        selectedDestination = destination
+                    }
                 }
             }
+
+            // Draw actual routes between destinations
+            ForEach(routeManager.routes) { route in
+                MapPolyline(route.polyline)
+                    .stroke(route.travelMode.routeColor, style: StrokeStyle(
+                        lineWidth: 4,
+                        lineCap: .round,
+                        lineJoin: .round
+                    ))
+            }
+
+            // Fallback to straight lines while routes are loading
+            if routeManager.routes.isEmpty && suggestion.destinations.count > 1 {
+                let coordinates = suggestion.destinations.map(\.coordinate)
+                MapPolyline(coordinates: coordinates)
+                    .stroke(Color.blue.opacity(0.5), style: StrokeStyle(
+                        lineWidth: 2,
+                        lineCap: .round,
+                        dash: [8, 4]
+                    ))
+            }
         }
+        .mapStyle(.standard(elevation: .realistic))
         .frame(height: 200)
-        .allowsHitTesting(true)
+        .overlay(alignment: .topTrailing) {
+            if routeManager.isLoading {
+                ProgressView()
+                    .padding(6)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 6))
+                    .padding(6)
+            }
+        }
+        .task {
+            await routeManager.calculateRoutes(for: suggestion.destinations)
+        }
     }
 
     // MARK: - Title Section
@@ -894,4 +932,64 @@ struct CustomizeTripSheet: View {
         formatter.dateStyle = .medium
         return formatter.string(from: date)
     }
+}
+
+// MARK: - Suggestion Route Manager
+
+@MainActor
+class SuggestionRouteManager: ObservableObject {
+    @Published var routes: [SuggestionRoute] = []
+    @Published var isLoading = false
+
+    private let directionsService: DirectionsServiceProtocol
+
+    init(directionsService: DirectionsServiceProtocol = DirectionsService()) {
+        self.directionsService = directionsService
+    }
+
+    func calculateRoutes(for destinations: [SuggestedDestination]) async {
+        guard destinations.count > 1 else {
+            routes = []
+            return
+        }
+
+        isLoading = true
+
+        var newRoutes: [SuggestionRoute] = []
+
+        for i in 0..<(destinations.count - 1) {
+            let from = destinations[i]
+            let to = destinations[i + 1]
+
+            do {
+                let result = try await directionsService.calculateRoute(
+                    from: from.coordinate,
+                    to: to.coordinate,
+                    mode: to.suggestedTravelMode
+                )
+
+                if let polyline = result.polyline {
+                    let route = SuggestionRoute(
+                        id: "\(from.id)-\(to.id)",
+                        polyline: polyline,
+                        travelMode: to.suggestedTravelMode
+                    )
+                    newRoutes.append(route)
+                }
+            } catch {
+                print("Error calculating route: \(error)")
+            }
+        }
+
+        routes = newRoutes
+        isLoading = false
+    }
+}
+
+// MARK: - Suggestion Route Model
+
+struct SuggestionRoute: Identifiable {
+    let id: String
+    let polyline: MKPolyline
+    let travelMode: TravelMode
 }
