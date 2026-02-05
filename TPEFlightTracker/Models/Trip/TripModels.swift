@@ -217,6 +217,54 @@ struct TripDestination: Identifiable, Codable, Equatable {
             return "map.fill"
         }
     }
+
+    // MARK: - Time Formatting
+
+    /// Formatted arrival time (e.g., "09:30")
+    var formattedArrivalTime: String? {
+        guard let arrival = plannedArrival else { return nil }
+        return TripDestination.timeFormatter.string(from: arrival)
+    }
+
+    /// Formatted departure time (e.g., "11:00")
+    var formattedDepartureTime: String? {
+        guard let departure = plannedDeparture else { return nil }
+        return TripDestination.timeFormatter.string(from: departure)
+    }
+
+    /// Formatted time range (e.g., "09:30 - 11:00")
+    var formattedTimeRange: String? {
+        guard let arrival = formattedArrivalTime else { return nil }
+        if let departure = formattedDepartureTime {
+            return "\(arrival) - \(departure)"
+        }
+        return arrival
+    }
+
+    /// Check if this destination has a scheduled time
+    var hasScheduledTime: Bool {
+        plannedArrival != nil
+    }
+
+    /// Calculate departure time based on arrival and estimated stay
+    var calculatedDepartureTime: Date? {
+        guard let arrival = plannedArrival else { return nil }
+        let stayMinutes = estimatedStayMinutes ?? 60
+        return Calendar.current.date(byAdding: .minute, value: stayMinutes, to: arrival)
+    }
+
+    /// Auto-set departure time based on arrival and stay duration
+    mutating func autoSetDepartureTime() {
+        if let departure = calculatedDepartureTime {
+            plannedDeparture = departure
+        }
+    }
+
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }()
 }
 
 // MARK: - Trip Sharing Extensions

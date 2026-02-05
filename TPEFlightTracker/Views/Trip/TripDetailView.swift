@@ -367,24 +367,63 @@ struct DestinationRowView: View {
 
             // Destination info
             HStack(alignment: .top, spacing: 12) {
-                // Order number
-                ZStack {
-                    Circle()
-                        .fill(Color.accentColor)
-                        .frame(width: 24, height: 24)
-                    Text("\(index + 1)")
-                        .font(.caption.bold())
-                        .foregroundStyle(.white)
+                // Time column (if scheduled)
+                VStack(spacing: 2) {
+                    if let arrivalTime = destination.formattedArrivalTime {
+                        Text(arrivalTime)
+                            .font(.caption.bold())
+                            .foregroundStyle(.primary)
+                    }
+
+                    // Order number
+                    ZStack {
+                        Circle()
+                            .fill(destination.hasScheduledTime ? Color.orange : Color.accentColor)
+                            .frame(width: 24, height: 24)
+                        Text("\(index + 1)")
+                            .font(.caption.bold())
+                            .foregroundStyle(.white)
+                    }
+
+                    if let departureTime = destination.formattedDepartureTime {
+                        Text(departureTime)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .frame(width: 40)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(destination.name)
-                        .font(.headline)
+                    HStack {
+                        Text(destination.name)
+                            .font(.headline)
+
+                        // Notification indicator
+                        if destination.hasScheduledTime {
+                            Image(systemName: "bell.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.orange)
+                        }
+                    }
 
                     Text(destination.address)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
+
+                    // Scheduled time badge
+                    if let timeRange = destination.formattedTimeRange {
+                        HStack(spacing: 4) {
+                            Image(systemName: "calendar.badge.clock")
+                            Text(timeRange)
+                        }
+                        .font(.caption2)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.orange.opacity(0.15))
+                        .foregroundStyle(.orange)
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
 
                     // Estimated stay time
                     if let stayTime = destination.formattedEstimatedStay {
@@ -725,6 +764,10 @@ struct EditDestinationView: View {
     @State private var notes: String
     @State private var travelMode: TravelMode
     @State private var estimatedStayMinutes: Int
+    @State private var hasScheduledTime: Bool
+    @State private var arrivalTime: Date
+    @State private var departureTime: Date
+    @State private var enableNotifications: Bool = true
 
     init(trip: Trip, destination: TripDestination, viewModel: TripViewModel) {
         self.trip = trip
@@ -734,6 +777,25 @@ struct EditDestinationView: View {
         _notes = State(initialValue: destination.notes)
         _travelMode = State(initialValue: destination.travelMode)
         _estimatedStayMinutes = State(initialValue: destination.estimatedStayMinutes ?? 60)
+        _hasScheduledTime = State(initialValue: destination.plannedArrival != nil)
+
+        // Initialize times with existing values or defaults based on trip date
+        let defaultArrival = destination.plannedArrival ?? Calendar.current.date(
+            bySettingHour: 9,
+            minute: 0,
+            second: 0,
+            of: trip.startDate
+        ) ?? trip.startDate
+
+        let stayMinutes = destination.estimatedStayMinutes ?? 60
+        let defaultDeparture = destination.plannedDeparture ?? Calendar.current.date(
+            byAdding: .minute,
+            value: stayMinutes,
+            to: defaultArrival
+        ) ?? defaultArrival
+
+        _arrivalTime = State(initialValue: defaultArrival)
+        _departureTime = State(initialValue: defaultDeparture)
     }
 
     var body: some View {
@@ -747,6 +809,53 @@ struct EditDestinationView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                // Schedule Section
+                Section {
+                    Toggle("Schedule Time", isOn: $hasScheduledTime)
+
+                    if hasScheduledTime {
+                        DatePicker(
+                            "Arrival",
+                            selection: $arrivalTime,
+                            in: trip.startDate...trip.endDate,
+                            displayedComponents: [.date, .hourAndMinute]
+                        )
+
+                        DatePicker(
+                            "Departure",
+                            selection: $departureTime,
+                            in: arrivalTime...,
+                            displayedComponents: [.date, .hourAndMinute]
+                        )
+
+                        // Auto-calculate button
+                        Button {
+                            departureTime = Calendar.current.date(
+                                byAdding: .minute,
+                                value: estimatedStayMinutes,
+                                to: arrivalTime
+                            ) ?? arrivalTime
+                        } label: {
+                            Label("Auto-set departure based on stay time", systemImage: "wand.and.stars")
+                        }
+                        .font(.caption)
+
+                        Toggle(isOn: $enableNotifications) {
+                            HStack {
+                                Image(systemName: "bell.fill")
+                                    .foregroundStyle(.orange)
+                                Text("Notify 10 min before")
+                            }
+                        }
+                    }
+                } header: {
+                    Text("Schedule")
+                } footer: {
+                    if hasScheduledTime {
+                        Text("You'll receive reminders 10 minutes before arrival and departure times.")
+                    }
+                }
+
                 Section("Time at Location") {
                     Stepper(value: $estimatedStayMinutes, in: 15...480, step: 15) {
                         HStack {
@@ -755,6 +864,16 @@ struct EditDestinationView: View {
                             Text(formatMinutes(estimatedStayMinutes))
                                 .foregroundStyle(.secondary)
                         }
+                    }
+                }
+                .onChange(of: estimatedStayMinutes) { _, newValue in
+                    // Auto-update departure time when stay duration changes
+                    if hasScheduledTime {
+                        departureTime = Calendar.current.date(
+                            byAdding: .minute,
+                            value: newValue,
+                            to: arrivalTime
+                        ) ?? arrivalTime
                     }
                 }
 
@@ -840,8 +959,37 @@ struct EditDestinationView: View {
         updatedTrip.destinations[index].notes = notes
         updatedTrip.destinations[index].travelMode = travelMode
         updatedTrip.destinations[index].estimatedStayMinutes = estimatedStayMinutes
+
+        // Update scheduled times
+        if hasScheduledTime {
+            updatedTrip.destinations[index].plannedArrival = arrivalTime
+            updatedTrip.destinations[index].plannedDeparture = departureTime
+        } else {
+            updatedTrip.destinations[index].plannedArrival = nil
+            updatedTrip.destinations[index].plannedDeparture = nil
+        }
+
         updatedTrip.updatedAt = Date()
         viewModel.updateTrip(updatedTrip)
+
+        // Schedule notifications
+        if hasScheduledTime && enableNotifications {
+            Task {
+                let notificationService = NotificationService.shared
+                let authorized = await notificationService.requestAuthorization()
+                if authorized {
+                    await notificationService.scheduleDestinationReminder(
+                        for: updatedTrip.destinations[index],
+                        tripName: trip.name,
+                        minutesBefore: 10
+                    )
+                }
+            }
+        } else {
+            // Cancel any existing notifications for this destination
+            NotificationService.shared.cancelReminder(for: destination.id)
+        }
+
         dismiss()
     }
 
