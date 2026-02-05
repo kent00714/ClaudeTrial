@@ -61,6 +61,11 @@ struct SuggestionDetailView: View {
                             highlightsSection
                         }
 
+                        // Best Seasons
+                        if !suggestion.bestSeasons.contains(.all) && !suggestion.bestSeasons.isEmpty {
+                            bestSeasonsSection
+                        }
+
                         // Seasonal Note
                         if let note = suggestion.seasonalNote {
                             seasonalNoteSection(note: note)
@@ -120,24 +125,88 @@ struct SuggestionDetailView: View {
 
     private var titleSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Category Badge
-            HStack {
-                Image(systemName: suggestion.category.systemImage)
-                Text(suggestion.category.displayName)
+            // Badges row
+            HStack(spacing: 8) {
+                // Category Badge
+                HStack {
+                    Image(systemName: suggestion.category.systemImage)
+                    Text(suggestion.category.displayName)
+                }
+                .font(.caption)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.blue.opacity(0.1))
+                .clipShape(Capsule())
+
+                // Trending Badge
+                if let badge = suggestion.trendingData?.trendingBadge {
+                    HStack(spacing: 4) {
+                        if badge == "Hot" {
+                            Image(systemName: "flame.fill")
+                        }
+                        Text(badge)
+                        if let direction = suggestion.trendingData?.trendDirection {
+                            Image(systemName: direction.systemImage)
+                        }
+                    }
+                    .font(.caption)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(badge == "Hot" ? Color.red.opacity(0.2) : Color.orange.opacity(0.2))
+                    .foregroundStyle(badge == "Hot" ? .red : .orange)
+                    .clipShape(Capsule())
+                }
+
+                // Seasonal Badge
+                if suggestion.isGoodForCurrentSeason && suggestion.trendingData?.peakSeason == Season.current {
+                    HStack {
+                        Image(systemName: "star.fill")
+                        Text("Perfect Now")
+                    }
+                    .font(.caption)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.green.opacity(0.2))
+                    .foregroundStyle(.green)
+                    .clipShape(Capsule())
+                }
             }
-            .font(.caption)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color.blue.opacity(0.1))
-            .clipShape(Capsule())
 
             Text(suggestion.name)
                 .font(.title)
                 .fontWeight(.bold)
 
-            Text(suggestion.subtitle)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+            // Dynamic subtitle with trending reason
+            if suggestion.trendingData?.isCurrentlyHot == true, let reason = suggestion.trendingData?.trendingReason {
+                Text(reason)
+                    .font(.subheadline)
+                    .foregroundStyle(.orange)
+            } else {
+                Text(suggestion.subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            // Social proof
+            if let mentions = suggestion.trendingData?.formattedMentions, suggestion.trendingData?.socialMentions ?? 0 > 1000 {
+                HStack(spacing: 8) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "bubble.left.fill")
+                        Text("\(mentions) social mentions")
+                    }
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                    if let direction = suggestion.trendingData?.trendDirection {
+                        HStack(spacing: 2) {
+                            Image(systemName: direction.systemImage)
+                            Text(direction == .rising ? "Rising" : direction == .declining ? "Cooling" : "Steady")
+                        }
+                        .font(.caption)
+                        .foregroundStyle(direction == .rising ? .green : direction == .declining ? .red : .secondary)
+                    }
+                }
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -230,6 +299,56 @@ struct SuggestionDetailView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: - Best Seasons Section
+
+    private var bestSeasonsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Best Time to Visit")
+                .font(.headline)
+
+            HStack(spacing: 8) {
+                ForEach(suggestion.bestSeasons, id: \.self) { season in
+                    let isCurrent = season == Season.current
+                    HStack(spacing: 4) {
+                        Image(systemName: seasonIcon(for: season))
+                        Text(season.displayName.components(separatedBy: " ").first ?? season.rawValue.capitalized)
+                    }
+                    .font(.caption)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(isCurrent ? Color.green.opacity(0.2) : Color(.systemGray6))
+                    .foregroundStyle(isCurrent ? .green : .primary)
+                    .clipShape(Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(isCurrent ? Color.green : Color.clear, lineWidth: 2)
+                    )
+                }
+            }
+
+            if suggestion.bestSeasons.contains(Season.current) {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                    Text("Great time to visit!")
+                        .foregroundStyle(.green)
+                }
+                .font(.caption)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func seasonIcon(for season: Season) -> String {
+        switch season {
+        case .spring: return "leaf.fill"
+        case .summer: return "sun.max.fill"
+        case .autumn: return "wind"
+        case .winter: return "snowflake"
+        case .all: return "calendar"
+        }
     }
 
     // MARK: - Seasonal Note Section

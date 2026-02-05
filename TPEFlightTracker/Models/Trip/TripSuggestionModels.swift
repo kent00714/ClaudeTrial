@@ -218,6 +218,9 @@ struct TripSuggestion: Identifiable, Codable, Equatable {
     let tags: [String]
     let seasonalNote: String?  // Special notes for certain seasons
     let lastUpdated: Date
+    let trendingData: TrendingData?  // Dynamic trending information
+    let bestSeasons: [Season]        // When this trip is best
+    let relatedEvents: [String]      // IDs of related events/festivals
 
     init(
         id: UUID = UUID(),
@@ -233,7 +236,10 @@ struct TripSuggestion: Identifiable, Codable, Equatable {
         difficulty: DifficultyLevel = .easy,
         tags: [String] = [],
         seasonalNote: String? = nil,
-        lastUpdated: Date = Date()
+        lastUpdated: Date = Date(),
+        trendingData: TrendingData? = nil,
+        bestSeasons: [Season] = [.all],
+        relatedEvents: [String] = []
     ) {
         self.id = id
         self.name = name
@@ -249,6 +255,9 @@ struct TripSuggestion: Identifiable, Codable, Equatable {
         self.tags = tags
         self.seasonalNote = seasonalNote
         self.lastUpdated = lastUpdated
+        self.trendingData = trendingData
+        self.bestSeasons = bestSeasons
+        self.relatedEvents = relatedEvents
     }
 
     var totalEstimatedTimeMinutes: Int {
@@ -265,6 +274,25 @@ struct TripSuggestion: Identifiable, Codable, Equatable {
         } else {
             return "\(mins) min"
         }
+    }
+
+    /// Check if this trip is good for the current season
+    var isGoodForCurrentSeason: Bool {
+        bestSeasons.contains(.all) || bestSeasons.contains(Season.current)
+    }
+
+    /// Check if this trip is currently trending
+    var isTrending: Bool {
+        guard let trending = trendingData else { return false }
+        return trending.trendingScore >= 70 || trending.isCurrentlyHot
+    }
+
+    /// Get dynamic subtitle based on trending status
+    var dynamicSubtitle: String {
+        if let trending = trendingData, trending.isCurrentlyHot, let reason = trending.trendingReason {
+            return reason
+        }
+        return subtitle
     }
 
     /// Convert to Trip for adding to user's trips
@@ -353,5 +381,153 @@ enum DifficultyLevel: String, Codable, CaseIterable, Identifiable {
         case .moderate: return "Some walking required, comfortable shoes recommended"
         case .challenging: return "Requires good fitness, may involve hiking or climbing"
         }
+    }
+}
+
+// MARK: - Season
+
+enum Season: String, Codable, CaseIterable {
+    case spring
+    case summer
+    case autumn
+    case winter
+    case all
+
+    static var current: Season {
+        let month = Calendar.current.component(.month, from: Date())
+        switch month {
+        case 3...5: return .spring
+        case 6...8: return .summer
+        case 9...11: return .autumn
+        default: return .winter
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .spring: return "Spring (Mar-May)"
+        case .summer: return "Summer (Jun-Aug)"
+        case .autumn: return "Autumn (Sep-Nov)"
+        case .winter: return "Winter (Dec-Feb)"
+        case .all: return "Year-round"
+        }
+    }
+
+    var taiwanHighlights: String {
+        switch self {
+        case .spring: return "Cherry blossoms, Yangmingshan flowers, comfortable weather"
+        case .summer: return "Beach trips, water activities, mango season"
+        case .autumn: return "Moon Festival, comfortable hiking, fall colors"
+        case .winter: return "Hot springs, less crowded, Lunar New Year"
+        case .all: return "Great any time of year"
+        }
+    }
+}
+
+// MARK: - Trending Data
+
+struct TrendingData: Codable, Equatable {
+    let trendingScore: Int          // 0-100, higher = more trending
+    let socialMentions: Int         // Simulated social media mentions
+    let trendDirection: TrendDirection
+    let trendingReason: String?     // e.g., "Featured on Netflix", "Viral TikTok"
+    let lastTrendUpdate: Date
+    let peakSeason: Season
+    let isCurrentlyHot: Bool        // Is this place trending RIGHT NOW
+
+    init(
+        trendingScore: Int = 50,
+        socialMentions: Int = 0,
+        trendDirection: TrendDirection = .stable,
+        trendingReason: String? = nil,
+        lastTrendUpdate: Date = Date(),
+        peakSeason: Season = .all,
+        isCurrentlyHot: Bool = false
+    ) {
+        self.trendingScore = min(100, max(0, trendingScore))
+        self.socialMentions = socialMentions
+        self.trendDirection = trendDirection
+        self.trendingReason = trendingReason
+        self.lastTrendUpdate = lastTrendUpdate
+        self.peakSeason = peakSeason
+        self.isCurrentlyHot = isCurrentlyHot
+    }
+
+    var formattedMentions: String {
+        if socialMentions >= 1000000 {
+            return String(format: "%.1fM", Double(socialMentions) / 1000000)
+        } else if socialMentions >= 1000 {
+            return String(format: "%.1fK", Double(socialMentions) / 1000)
+        }
+        return "\(socialMentions)"
+    }
+
+    var trendingBadge: String? {
+        if isCurrentlyHot && trendingScore >= 80 {
+            return "Hot"
+        } else if trendingScore >= 70 {
+            return "Popular"
+        } else if trendDirection == .rising && trendingScore >= 50 {
+            return "Rising"
+        }
+        return nil
+    }
+}
+
+enum TrendDirection: String, Codable {
+    case rising
+    case stable
+    case declining
+
+    var systemImage: String {
+        switch self {
+        case .rising: return "arrow.up.right"
+        case .stable: return "arrow.right"
+        case .declining: return "arrow.down.right"
+        }
+    }
+}
+
+// MARK: - Event/Festival
+
+struct SpecialEvent: Codable, Equatable, Identifiable {
+    let id: UUID
+    let name: String
+    let nameLocal: String
+    let description: String
+    let startDate: Date
+    let endDate: Date
+    let location: String
+    let tags: [String]
+
+    init(
+        id: UUID = UUID(),
+        name: String,
+        nameLocal: String = "",
+        description: String,
+        startDate: Date,
+        endDate: Date,
+        location: String,
+        tags: [String] = []
+    ) {
+        self.id = id
+        self.name = name
+        self.nameLocal = nameLocal
+        self.description = description
+        self.startDate = startDate
+        self.endDate = endDate
+        self.location = location
+        self.tags = tags
+    }
+
+    var isHappeningNow: Bool {
+        let now = Date()
+        return now >= startDate && now <= endDate
+    }
+
+    var isUpcoming: Bool {
+        let now = Date()
+        let oneMonthLater = Calendar.current.date(byAdding: .month, value: 1, to: now) ?? now
+        return startDate > now && startDate <= oneMonthLater
     }
 }

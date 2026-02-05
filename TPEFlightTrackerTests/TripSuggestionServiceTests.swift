@@ -275,15 +275,163 @@ final class TripSuggestionServiceTests: XCTestCase {
         XCTAssertEqual(BudgetLevel.premium.dollarSigns, "$$$")
         XCTAssertEqual(BudgetLevel.luxury.dollarSigns, "$$$$")
     }
+
+    // MARK: - Hot Right Now Tests
+
+    func testGetHotRightNow() {
+        let hotSuggestions = sut.getHotRightNow()
+
+        XCTAssertFalse(hotSuggestions.isEmpty)
+        XCTAssertTrue(hotSuggestions.allSatisfy {
+            $0.trendingData?.isCurrentlyHot == true
+        })
+    }
+
+    // MARK: - Seasonal Tests
+
+    func testGetSeasonalSuggestions() {
+        let seasonal = sut.getSeasonalSuggestions()
+
+        XCTAssertFalse(seasonal.isEmpty)
+        XCTAssertTrue(seasonal.allSatisfy { $0.isGoodForCurrentSeason })
+    }
+
+    func testSeasonCurrentDetection() {
+        let current = Season.current
+        let month = Calendar.current.component(.month, from: Date())
+
+        switch month {
+        case 3...5:
+            XCTAssertEqual(current, .spring)
+        case 6...8:
+            XCTAssertEqual(current, .summer)
+        case 9...11:
+            XCTAssertEqual(current, .autumn)
+        default:
+            XCTAssertEqual(current, .winter)
+        }
+    }
+
+    // MARK: - Trending Data Tests
+
+    func testTrendingDataTrendingBadge() {
+        let hotData = TrendingData(trendingScore: 90, isCurrentlyHot: true)
+        XCTAssertEqual(hotData.trendingBadge, "Hot")
+
+        let popularData = TrendingData(trendingScore: 75)
+        XCTAssertEqual(popularData.trendingBadge, "Popular")
+
+        let risingData = TrendingData(trendingScore: 55, trendDirection: .rising)
+        XCTAssertEqual(risingData.trendingBadge, "Rising")
+
+        let normalData = TrendingData(trendingScore: 40)
+        XCTAssertNil(normalData.trendingBadge)
+    }
+
+    func testTrendingDataFormattedMentions() {
+        let millionData = TrendingData(socialMentions: 1500000)
+        XCTAssertEqual(millionData.formattedMentions, "1.5M")
+
+        let thousandData = TrendingData(socialMentions: 45000)
+        XCTAssertEqual(thousandData.formattedMentions, "45.0K")
+
+        let smallData = TrendingData(socialMentions: 500)
+        XCTAssertEqual(smallData.formattedMentions, "500")
+    }
+
+    func testTrendingScoreClamped() {
+        let overData = TrendingData(trendingScore: 150)
+        XCTAssertEqual(overData.trendingScore, 100)
+
+        let underData = TrendingData(trendingScore: -10)
+        XCTAssertEqual(underData.trendingScore, 0)
+    }
+
+    func testSuggestionIsTrending() {
+        let suggestions = sut.getAllSuggestions()
+        let trendingSuggestions = suggestions.filter { $0.isTrending }
+
+        XCTAssertFalse(trendingSuggestions.isEmpty)
+        XCTAssertTrue(trendingSuggestions.allSatisfy {
+            ($0.trendingData?.trendingScore ?? 0) >= 70 || $0.trendingData?.isCurrentlyHot == true
+        })
+    }
+
+    func testSuggestionDynamicSubtitle() {
+        let suggestions = sut.getHotRightNow()
+        guard let hotSuggestion = suggestions.first(where: { $0.trendingData?.trendingReason != nil }) else {
+            return // Skip if no hot suggestion with reason
+        }
+
+        XCTAssertEqual(hotSuggestion.dynamicSubtitle, hotSuggestion.trendingData?.trendingReason)
+    }
+
+    // MARK: - Events Tests
+
+    func testGetUpcomingEvents() {
+        let events = sut.getUpcomingEvents()
+
+        // Events are sorted by start date
+        if events.count > 1 {
+            for i in 0..<events.count - 1 {
+                XCTAssertTrue(events[i].startDate <= events[i + 1].startDate)
+            }
+        }
+    }
+
+    func testSpecialEventProperties() {
+        let calendar = Calendar.current
+        let now = Date()
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: now)!
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: now)!
+        let nextWeek = calendar.date(byAdding: .day, value: 7, to: now)!
+
+        let happeningEvent = SpecialEvent(
+            name: "Test",
+            description: "Test",
+            startDate: yesterday,
+            endDate: tomorrow,
+            location: "Test"
+        )
+        XCTAssertTrue(happeningEvent.isHappeningNow)
+        XCTAssertFalse(happeningEvent.isUpcoming)
+
+        let upcomingEvent = SpecialEvent(
+            name: "Test",
+            description: "Test",
+            startDate: tomorrow,
+            endDate: nextWeek,
+            location: "Test"
+        )
+        XCTAssertFalse(upcomingEvent.isHappeningNow)
+        XCTAssertTrue(upcomingEvent.isUpcoming)
+    }
+
+    // MARK: - Season Tests
+
+    func testAllSeasonsHaveDisplayNames() {
+        for season in Season.allCases {
+            XCTAssertFalse(season.displayName.isEmpty)
+            XCTAssertFalse(season.taiwanHighlights.isEmpty)
+        }
+    }
+
+    func testTrendDirectionSystemImages() {
+        XCTAssertEqual(TrendDirection.rising.systemImage, "arrow.up.right")
+        XCTAssertEqual(TrendDirection.stable.systemImage, "arrow.right")
+        XCTAssertEqual(TrendDirection.declining.systemImage, "arrow.down.right")
+    }
 }
 
 // MARK: - Mock Suggestion Service for ViewModel Tests
 
 class MockTripSuggestionService: TripSuggestionServiceProtocol {
     var suggestionsToReturn: [TripSuggestion] = []
+    var eventsToReturn: [SpecialEvent] = []
     var getAllSuggestionsCallCount = 0
     var getSuggestionsForCategoryCallCount = 0
     var searchCallCount = 0
+    var refreshTrendingCallCount = 0
     var lastSearchQuery: String?
 
     func getAllSuggestions() -> [TripSuggestion] {
@@ -301,7 +449,15 @@ class MockTripSuggestionService: TripSuggestionServiceProtocol {
     }
 
     func getTrendingSuggestions() -> [TripSuggestion] {
-        return suggestionsToReturn.filter { $0.category == .trending }
+        return suggestionsToReturn.filter { $0.category == .trending || $0.isTrending }
+    }
+
+    func getHotRightNow() -> [TripSuggestion] {
+        return suggestionsToReturn.filter { $0.trendingData?.isCurrentlyHot == true }
+    }
+
+    func getSeasonalSuggestions() -> [TripSuggestion] {
+        return suggestionsToReturn.filter { $0.isGoodForCurrentSeason }
     }
 
     func getRecommendedForFirstTimers() -> [TripSuggestion] {
@@ -315,5 +471,13 @@ class MockTripSuggestionService: TripSuggestionServiceProtocol {
         return suggestionsToReturn.filter {
             $0.name.lowercased().contains(query.lowercased())
         }
+    }
+
+    func getUpcomingEvents() -> [SpecialEvent] {
+        return eventsToReturn
+    }
+
+    func refreshTrendingData() async {
+        refreshTrendingCallCount += 1
     }
 }

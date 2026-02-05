@@ -20,6 +20,16 @@ struct TripSuggestionsView: View {
                     // Search Bar
                     searchBar
 
+                    // Hot Right Now Section (viral content)
+                    if viewModel.searchQuery.isEmpty && !viewModel.hotRightNow.isEmpty {
+                        hotRightNowSection
+                    }
+
+                    // Seasonal Picks
+                    if viewModel.searchQuery.isEmpty && !viewModel.seasonalPicks.isEmpty {
+                        seasonalSection
+                    }
+
                     // First Time Visitors Section
                     if viewModel.searchQuery.isEmpty {
                         firstTimeSection
@@ -28,6 +38,11 @@ struct TripSuggestionsView: View {
                     // Trending Section
                     if viewModel.searchQuery.isEmpty && !viewModel.trendingSuggestions.isEmpty {
                         trendingSection
+                    }
+
+                    // Upcoming Events
+                    if viewModel.searchQuery.isEmpty && !viewModel.upcomingEvents.isEmpty {
+                        upcomingEventsSection
                     }
 
                     // Categories Grid
@@ -49,6 +64,22 @@ struct TripSuggestionsView: View {
             }
             .navigationTitle("Discover Taiwan")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Task {
+                            await viewModel.refreshTrending()
+                        }
+                    } label: {
+                        if viewModel.isRefreshing {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                    }
+                    .disabled(viewModel.isRefreshing)
+                }
+            }
             .sheet(item: $viewModel.selectedSuggestion) { suggestion in
                 SuggestionDetailView(
                     suggestion: suggestion,
@@ -140,14 +171,101 @@ struct TripSuggestionsView: View {
         }
     }
 
+    // MARK: - Hot Right Now Section
+
+    private var hotRightNowSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "flame.fill")
+                    .foregroundStyle(.red)
+                Text("Hot Right Now")
+                    .font(.headline)
+                Image(systemName: "sparkle")
+                    .foregroundStyle(.orange)
+                    .font(.caption)
+            }
+
+            Text("Viral destinations trending on social media")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(viewModel.hotRightNow) { suggestion in
+                        HotSuggestionCard(suggestion: suggestion)
+                            .onTapGesture {
+                                viewModel.selectedSuggestion = suggestion
+                            }
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(
+            LinearGradient(
+                colors: [.red.opacity(0.1), .orange.opacity(0.1)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    // MARK: - Seasonal Section
+
+    private var seasonalSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: Season.current == .spring ? "leaf.fill" :
+                        Season.current == .summer ? "sun.max.fill" :
+                        Season.current == .autumn ? "wind" : "snowflake")
+                    .foregroundStyle(.green)
+                Text("Best for \(Season.current.displayName.components(separatedBy: " ").first ?? "Now")")
+                    .font(.headline)
+            }
+
+            Text(Season.current.taiwanHighlights)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(viewModel.seasonalPicks) { suggestion in
+                        SuggestionCard(suggestion: suggestion, style: .compact)
+                            .onTapGesture {
+                                viewModel.selectedSuggestion = suggestion
+                            }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Upcoming Events Section
+
+    private var upcomingEventsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "calendar.badge.clock")
+                    .foregroundStyle(.purple)
+                Text("Upcoming Events")
+                    .font(.headline)
+            }
+
+            ForEach(viewModel.upcomingEvents.prefix(3)) { event in
+                EventRow(event: event)
+            }
+        }
+    }
+
     // MARK: - Trending Section
 
     private var trendingSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Image(systemName: "flame.fill")
+                Image(systemName: "chart.line.uptrend.xyaxis")
                     .foregroundStyle(.orange)
-                Text("Trending Now")
+                Text("Trending Trips")
                     .font(.headline)
             }
 
@@ -270,16 +388,25 @@ struct SuggestionCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Category Badge
+            // Top row: Category Badge + Trending Badge
             HStack {
-                Image(systemName: suggestion.category.systemImage)
-                Text(suggestion.category.displayName)
-                    .font(.caption)
+                HStack {
+                    Image(systemName: suggestion.category.systemImage)
+                    Text(suggestion.category.displayName)
+                        .font(.caption)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.blue.opacity(0.1))
+                .clipShape(Capsule())
+
+                Spacer()
+
+                // Trending Badge
+                if let trendingBadge = suggestion.trendingData?.trendingBadge {
+                    TrendingBadge(badge: trendingBadge, direction: suggestion.trendingData?.trendDirection)
+                }
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color.blue.opacity(0.1))
-            .clipShape(Capsule())
 
             // Title
             Text(suggestion.name)
@@ -287,11 +414,11 @@ struct SuggestionCard: View {
                 .fontWeight(.semibold)
                 .lineLimit(2)
 
-            // Subtitle
+            // Dynamic subtitle (shows trending reason if hot)
             if style == .featured {
-                Text(suggestion.subtitle)
+                Text(suggestion.dynamicSubtitle)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(suggestion.trendingData?.isCurrentlyHot == true ? .orange : .secondary)
                     .lineLimit(2)
             }
 
@@ -303,16 +430,177 @@ struct SuggestionCard: View {
             .font(.caption2)
             .foregroundStyle(.secondary)
 
-            // Budget
-            Text(suggestion.budgetLevel.dollarSigns)
-                .font(.caption)
-                .foregroundStyle(.green)
+            // Bottom row: Budget + Social mentions
+            HStack {
+                Text(suggestion.budgetLevel.dollarSigns)
+                    .font(.caption)
+                    .foregroundStyle(.green)
+
+                Spacer()
+
+                if let mentions = suggestion.trendingData?.formattedMentions, suggestion.trendingData?.socialMentions ?? 0 > 1000 {
+                    HStack(spacing: 2) {
+                        Image(systemName: "bubble.left.fill")
+                            .font(.caption2)
+                        Text(mentions)
+                            .font(.caption2)
+                    }
+                    .foregroundStyle(.secondary)
+                }
+            }
         }
         .padding()
         .frame(width: style == .featured ? 280 : 200)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+        .overlay(alignment: .topTrailing) {
+            if suggestion.trendingData?.isCurrentlyHot == true {
+                Image(systemName: "flame.fill")
+                    .foregroundStyle(.orange)
+                    .padding(8)
+            }
+        }
+    }
+}
+
+// MARK: - Hot Suggestion Card
+
+struct HotSuggestionCard: View {
+    let suggestion: TripSuggestion
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Hot badge with reason
+            HStack {
+                Image(systemName: "flame.fill")
+                    .foregroundStyle(.red)
+                if let reason = suggestion.trendingData?.trendingReason {
+                    Text(reason)
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.red)
+                }
+            }
+
+            Text(suggestion.name)
+                .font(.headline)
+                .fontWeight(.bold)
+                .lineLimit(2)
+
+            // Social proof
+            if let mentions = suggestion.trendingData?.formattedMentions {
+                HStack(spacing: 4) {
+                    Image(systemName: "bubble.left.fill")
+                        .font(.caption2)
+                    Text("\(mentions) mentions")
+                        .font(.caption2)
+
+                    if let direction = suggestion.trendingData?.trendDirection, direction == .rising {
+                        Image(systemName: "arrow.up.right")
+                            .font(.caption2)
+                            .foregroundStyle(.green)
+                    }
+                }
+                .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 12) {
+                Label(suggestion.duration.displayName, systemImage: "clock")
+                Label(suggestion.budgetLevel.dollarSigns, systemImage: "dollarsign.circle")
+            }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+        }
+        .padding()
+        .frame(width: 220)
+        .background(
+            LinearGradient(
+                colors: [Color(.systemBackground), .red.opacity(0.05)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.red.opacity(0.3), lineWidth: 1)
+        )
+        .shadow(color: .red.opacity(0.1), radius: 8, x: 0, y: 4)
+    }
+}
+
+// MARK: - Event Row
+
+struct EventRow: View {
+    let event: SpecialEvent
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // Date indicator
+            VStack(spacing: 2) {
+                Text(monthString)
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(.secondary)
+                Text(dayString)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundStyle(.purple)
+            }
+            .frame(width: 50)
+            .padding(.vertical, 8)
+            .background(Color.purple.opacity(0.1))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text(event.name)
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+
+                    if event.isHappeningNow {
+                        Text("NOW")
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.green)
+                            .foregroundStyle(.white)
+                            .clipShape(Capsule())
+                    }
+                }
+
+                Text(event.nameLocal)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Text(event.location)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+    }
+
+    private var monthString: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM"
+        return formatter.string(from: event.startDate).uppercased()
+    }
+
+    private var dayString: String {
+        let day = Calendar.current.component(.day, from: event.startDate)
+        return "\(day)"
     }
 }
 
@@ -352,15 +640,29 @@ struct SuggestionListRow: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(suggestion.name)
-                        .font(.headline)
+                    HStack(spacing: 8) {
+                        Text(suggestion.name)
+                            .font(.headline)
 
-                    Text(suggestion.subtitle)
+                        // Trending badge
+                        if let badge = suggestion.trendingData?.trendingBadge {
+                            TrendingBadge(badge: badge, direction: suggestion.trendingData?.trendDirection, compact: true)
+                        }
+                    }
+
+                    Text(suggestion.dynamicSubtitle)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(suggestion.trendingData?.isCurrentlyHot == true ? .orange : .secondary)
                 }
 
                 Spacer()
+
+                // Trend direction arrow
+                if let direction = suggestion.trendingData?.trendDirection {
+                    Image(systemName: direction.systemImage)
+                        .font(.caption)
+                        .foregroundStyle(direction == .rising ? .green : (direction == .declining ? .red : .secondary))
+                }
 
                 Image(systemName: "chevron.right")
                     .foregroundStyle(.secondary)
@@ -371,22 +673,40 @@ struct SuggestionListRow: View {
                 Label("\(suggestion.destinations.count) stops", systemImage: "mappin")
                 Label(suggestion.budgetLevel.dollarSigns, systemImage: "dollarsign.circle")
                 Label(suggestion.difficulty.displayName, systemImage: suggestion.difficulty.systemImage)
+
+                // Social mentions
+                if let mentions = suggestion.trendingData?.formattedMentions, suggestion.trendingData?.socialMentions ?? 0 > 1000 {
+                    Spacer()
+                    HStack(spacing: 2) {
+                        Image(systemName: "bubble.left.fill")
+                        Text(mentions)
+                    }
+                }
             }
             .font(.caption)
             .foregroundStyle(.secondary)
 
-            // Tags
-            if !suggestion.tags.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(suggestion.tags.prefix(4), id: \.self) { tag in
-                            Text("#\(tag)")
-                                .font(.caption2)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(Color.blue.opacity(0.1))
-                                .clipShape(Capsule())
-                        }
+            // Tags with seasonal indicator
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    // Seasonal tag if good for current season
+                    if suggestion.isGoodForCurrentSeason && suggestion.trendingData?.peakSeason == Season.current {
+                        Text("Perfect for \(Season.current.displayName.components(separatedBy: " ").first ?? "now")")
+                            .font(.caption2)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.green.opacity(0.2))
+                            .foregroundStyle(.green)
+                            .clipShape(Capsule())
+                    }
+
+                    ForEach(suggestion.tags.prefix(3), id: \.self) { tag in
+                        Text("#\(tag)")
+                            .font(.caption2)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.blue.opacity(0.1))
+                            .clipShape(Capsule())
                     }
                 }
             }
@@ -395,6 +715,51 @@ struct SuggestionListRow: View {
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .overlay(alignment: .topLeading) {
+            if suggestion.trendingData?.isCurrentlyHot == true {
+                Image(systemName: "flame.fill")
+                    .foregroundStyle(.orange)
+                    .padding(8)
+            }
+        }
+    }
+}
+
+// MARK: - Trending Badge
+
+struct TrendingBadge: View {
+    let badge: String
+    let direction: TrendDirection?
+    var compact: Bool = false
+
+    var badgeColor: Color {
+        switch badge {
+        case "Hot": return .red
+        case "Popular": return .orange
+        case "Rising": return .green
+        default: return .blue
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 2) {
+            if badge == "Hot" {
+                Image(systemName: "flame.fill")
+                    .font(.caption2)
+            }
+            Text(badge)
+                .font(.caption2)
+                .fontWeight(.semibold)
+            if !compact, let direction = direction {
+                Image(systemName: direction.systemImage)
+                    .font(.caption2)
+            }
+        }
+        .padding(.horizontal, compact ? 6 : 8)
+        .padding(.vertical, compact ? 2 : 4)
+        .background(badgeColor.opacity(0.2))
+        .foregroundStyle(badgeColor)
+        .clipShape(Capsule())
     }
 }
 
@@ -406,6 +771,7 @@ class TripSuggestionsViewModel: ObservableObject {
     @Published var selectedCategory: SuggestionCategory?
     @Published var selectedSuggestion: TripSuggestion?
     @Published var showingAddedAlert = false
+    @Published var isRefreshing = false
 
     private let tripViewModel: TripViewModel
     private let suggestionService: TripSuggestionServiceProtocol
@@ -416,6 +782,18 @@ class TripSuggestionsViewModel: ObservableObject {
 
     var trendingSuggestions: [TripSuggestion] {
         suggestionService.getTrendingSuggestions()
+    }
+
+    var hotRightNow: [TripSuggestion] {
+        suggestionService.getHotRightNow()
+    }
+
+    var seasonalPicks: [TripSuggestion] {
+        suggestionService.getSeasonalSuggestions().prefix(5).map { $0 }
+    }
+
+    var upcomingEvents: [SpecialEvent] {
+        suggestionService.getUpcomingEvents()
     }
 
     var searchResults: [TripSuggestion] {
@@ -437,5 +815,11 @@ class TripSuggestionsViewModel: ObservableObject {
         tripViewModel.createTripFromSuggestion(trip)
         selectedSuggestion = nil
         showingAddedAlert = true
+    }
+
+    func refreshTrending() async {
+        isRefreshing = true
+        await suggestionService.refreshTrendingData()
+        isRefreshing = false
     }
 }
