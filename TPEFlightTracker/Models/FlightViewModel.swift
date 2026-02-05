@@ -8,8 +8,11 @@ class FlightViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var searchText = ""
     @Published var selectedDirection: FlightDirection = .arrival
+    @Published var lastUpdated: Date?
+    @Published var nextRefresh: Date?
 
     private let flightService: FlightServiceProtocol
+    private var refreshTask: Task<Void, Never>?
 
     init(flightService: FlightServiceProtocol = FlightService()) {
         self.flightService = flightService
@@ -41,6 +44,7 @@ class FlightViewModel: ObservableObject {
             let (arr, dep) = try await (fetchedArrivals, fetchedDepartures)
             arrivals = arr
             departures = dep
+            lastUpdated = Date()
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -50,5 +54,32 @@ class FlightViewModel: ObservableObject {
 
     func refresh() async {
         await loadFlights()
+    }
+
+    // MARK: - Auto Refresh Timer
+
+    func startAutoRefresh() {
+        stopAutoRefresh()
+        refreshTask = Task { [weak self] in
+            guard let self else { return }
+            // Initial load
+            await self.loadFlights()
+
+            // Schedule repeating refreshes
+            while !Task.isCancelled {
+                let interval = APIConfig.autoRefreshInterval
+                self.nextRefresh = Date().addingTimeInterval(interval)
+                try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+
+                guard !Task.isCancelled else { break }
+                await self.loadFlights()
+            }
+        }
+    }
+
+    func stopAutoRefresh() {
+        refreshTask?.cancel()
+        refreshTask = nil
+        nextRefresh = nil
     }
 }

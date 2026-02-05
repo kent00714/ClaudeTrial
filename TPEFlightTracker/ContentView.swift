@@ -3,6 +3,12 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var viewModel = FlightViewModel()
 
+    private var timeFormatter: DateFormatter {
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        return f
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -13,7 +19,23 @@ struct ContentView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .padding()
+                .padding(.horizontal)
+                .padding(.top)
+
+                // Last updated / next refresh bar
+                if let lastUpdated = viewModel.lastUpdated {
+                    HStack {
+                        Text("Updated \(timeFormatter.string(from: lastUpdated))")
+                        Spacer()
+                        if let nextRefresh = viewModel.nextRefresh {
+                            Text("Next: \(timeFormatter.string(from: nextRefresh))")
+                        }
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+                    .padding(.vertical, 4)
+                }
 
                 // Flight list
                 FlightListView(viewModel: viewModel)
@@ -40,8 +62,11 @@ struct ContentView: View {
                 Text(viewModel.errorMessage ?? "")
             }
         }
-        .task {
-            await viewModel.loadFlights()
+        .onAppear {
+            viewModel.startAutoRefresh()
+        }
+        .onDisappear {
+            viewModel.stopAutoRefresh()
         }
     }
 }

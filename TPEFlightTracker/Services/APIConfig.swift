@@ -15,4 +15,14 @@ enum APIConfig {
 
     static let airLabsBaseURL = "https://airlabs.co/api/v9"
     static let airportCode = "TPE"
+
+    // MARK: - Rate Budget
+
+    /// Free tier: 1,000 requests/month
+    static let monthlyRequestLimit = 1000
+    /// Each refresh calls 2 endpoints (arrivals + departures)
+    static let requestsPerRefresh = 2
+    /// Spread evenly across 30 days: 1000 / 2 / 30 ≈ 16 refreshes/day
+    /// 24h * 60min / 16 ≈ 90 minutes between refreshes
+    static let autoRefreshInterval: TimeInterval = 90 * 60 // 90 minutes
 }

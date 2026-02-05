@@ -28,6 +28,8 @@ final class FlightViewModelTests: XCTestCase {
         XCTAssertNil(viewModel.errorMessage)
         XCTAssertEqual(viewModel.searchText, "")
         XCTAssertEqual(viewModel.selectedDirection, .arrival)
+        XCTAssertNil(viewModel.lastUpdated)
+        XCTAssertNil(viewModel.nextRefresh)
     }
 
     // MARK: - Loading Flights
@@ -188,5 +190,66 @@ final class FlightViewModelTests: XCTestCase {
         mockService.departuresToReturn = TestData.sampleDepartures
         await viewModel.loadFlights()
         XCTAssertNil(viewModel.errorMessage)
+    }
+
+    // MARK: - Last Updated
+
+    func testLoadFlightsSetsLastUpdated() async {
+        mockService.arrivalsToReturn = TestData.sampleArrivals
+        mockService.departuresToReturn = TestData.sampleDepartures
+
+        XCTAssertNil(viewModel.lastUpdated)
+        await viewModel.loadFlights()
+        XCTAssertNotNil(viewModel.lastUpdated)
+    }
+
+    func testLoadFlightsDoesNotSetLastUpdatedOnError() async {
+        mockService.errorToThrow = TestError.networkFailure
+        await viewModel.loadFlights()
+        XCTAssertNil(viewModel.lastUpdated)
+    }
+
+    // MARK: - Auto Refresh
+
+    func testStartAutoRefreshLoadsFlights() async {
+        mockService.arrivalsToReturn = TestData.sampleArrivals
+        mockService.departuresToReturn = TestData.sampleDepartures
+
+        viewModel.startAutoRefresh()
+        // Give the task a moment to run
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertEqual(viewModel.arrivals.count, 3)
+        XCTAssertEqual(viewModel.departures.count, 2)
+        XCTAssertNotNil(viewModel.lastUpdated)
+        XCTAssertNotNil(viewModel.nextRefresh)
+
+        viewModel.stopAutoRefresh()
+    }
+
+    func testStopAutoRefreshClearsNextRefresh() async {
+        mockService.arrivalsToReturn = TestData.sampleArrivals
+        mockService.departuresToReturn = TestData.sampleDepartures
+
+        viewModel.startAutoRefresh()
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertNotNil(viewModel.nextRefresh)
+
+        viewModel.stopAutoRefresh()
+        XCTAssertNil(viewModel.nextRefresh)
+    }
+
+    // MARK: - API Config Budget
+
+    func testAutoRefreshIntervalIs90Minutes() {
+        XCTAssertEqual(APIConfig.autoRefreshInterval, 90 * 60)
+    }
+
+    func testMonthlyBudgetCoversRefreshes() {
+        let refreshesPerDay = (24 * 60 * 60) / APIConfig.autoRefreshInterval
+        let requestsPerDay = refreshesPerDay * Double(APIConfig.requestsPerRefresh)
+        let requestsPerMonth = requestsPerDay * 30
+        XCTAssertLessThanOrEqual(requestsPerMonth, Double(APIConfig.monthlyRequestLimit),
+                                  "Monthly requests should stay within free tier limit")
     }
 }
