@@ -62,7 +62,7 @@ struct TripSuggestionsView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Discover Taiwan")
+            .navigationTitle(LocalizedStringKey("Discover Taiwan"))
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -88,15 +88,15 @@ struct TripSuggestionsView: View {
                     }
                 )
             }
-            .alert("Trip Added!", isPresented: $viewModel.showingAddedAlert) {
-                Button("View My Trips") {
+            .alert(LocalizedStringKey("Trip Added!"), isPresented: $viewModel.showingAddedAlert) {
+                Button(LocalizedStringKey("View My Trips")) {
                     viewModel.showingAddedAlert = false
                 }
-                Button("Continue Browsing", role: .cancel) {
+                Button(LocalizedStringKey("Continue Browsing"), role: .cancel) {
                     viewModel.showingAddedAlert = false
                 }
             } message: {
-                Text("The trip has been added to your trips. You can customize it anytime!")
+                Text(LocalizedStringKey("The trip has been added to your trips. You can customize it anytime!"))
             }
         }
     }
@@ -105,11 +105,11 @@ struct TripSuggestionsView: View {
 
     private var welcomeHeader: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Welcome to Taiwan!")
+            Text(LocalizedStringKey("Welcome to Taiwan!"))
                 .font(.title2)
                 .fontWeight(.bold)
 
-            Text("Let us help you plan the perfect trip. Browse curated itineraries designed especially for visitors like you.")
+            Text(LocalizedStringKey("Let us help you plan the perfect trip. Browse curated itineraries designed especially for visitors like you."))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -132,7 +132,7 @@ struct TripSuggestionsView: View {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
 
-            TextField("Search destinations, activities...", text: $viewModel.searchQuery)
+            TextField(LocalizedStringKey("Search destinations, activities..."), text: $viewModel.searchQuery)
                 .textFieldStyle(.plain)
 
             if !viewModel.searchQuery.isEmpty {
@@ -156,7 +156,7 @@ struct TripSuggestionsView: View {
             HStack {
                 Image(systemName: "star.fill")
                     .foregroundStyle(.orange)
-                Text("First Time in Taiwan?")
+                Text(LocalizedStringKey("First Time in Taiwan?"))
                     .font(.headline)
             }
 
@@ -180,14 +180,14 @@ struct TripSuggestionsView: View {
             HStack {
                 Image(systemName: "flame.fill")
                     .foregroundStyle(.red)
-                Text("Hot Right Now")
+                Text(LocalizedStringKey("Hot Right Now"))
                     .font(.headline)
                 Image(systemName: "sparkle")
                     .foregroundStyle(.orange)
                     .font(.caption)
             }
 
-            Text("Viral destinations trending on social media")
+            Text(LocalizedStringKey("Viral destinations trending on social media"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -222,11 +222,15 @@ struct TripSuggestionsView: View {
                         Season.current == .summer ? "sun.max.fill" :
                         Season.current == .autumn ? "wind" : "snowflake")
                     .foregroundStyle(.green)
-                Text("Best for \(Season.current.displayName.components(separatedBy: " ").first ?? "Now")")
-                    .font(.headline)
+                (
+                    Text(LocalizedStringKey("Best for"))
+                    + Text(" ")
+                    + Text(LocalizedStringKey(Season.current.displayName.components(separatedBy: " ").first ?? "Now"))
+                )
+                .font(.headline)
             }
 
-            Text(Season.current.taiwanHighlights)
+            Text(LocalizedStringKey(Season.current.taiwanHighlights))
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
@@ -250,7 +254,7 @@ struct TripSuggestionsView: View {
             HStack {
                 Image(systemName: "calendar.badge.clock")
                     .foregroundStyle(.purple)
-                Text("Upcoming Events")
+                Text(LocalizedStringKey("Upcoming Events"))
                     .font(.headline)
             }
 
@@ -267,7 +271,7 @@ struct TripSuggestionsView: View {
             HStack {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .foregroundStyle(.orange)
-                Text("Trending Trips")
+                Text(LocalizedStringKey("Trending Trips"))
                     .font(.headline)
             }
 
@@ -288,7 +292,7 @@ struct TripSuggestionsView: View {
 
     private var categoriesSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Browse by Category")
+            Text(LocalizedStringKey("Browse by Category"))
                 .font(.headline)
 
             LazyVGrid(columns: [
@@ -315,14 +319,14 @@ struct TripSuggestionsView: View {
 
     private var searchResultsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Search Results")
+            Text(LocalizedStringKey("Search Results"))
                 .font(.headline)
 
             if viewModel.searchResults.isEmpty {
                 ContentUnavailableView(
-                    "No Results",
+                    LocalizedStringKey("No Results"),
                     systemImage: "magnifyingglass",
-                    description: Text("Try searching for different keywords")
+                    description: Text(LocalizedStringKey("Try searching for different keywords"))
                 )
             } else {
                 ForEach(viewModel.searchResults) { suggestion in
@@ -341,12 +345,12 @@ struct TripSuggestionsView: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(systemName: category.systemImage)
-                Text(category.displayName)
+                Text(LocalizedStringKey(category.displayName))
                     .font(.headline)
 
                 Spacer()
 
-                Button("Clear") {
+                Button(LocalizedStringKey("Clear")) {
                     withAnimation {
                         viewModel.selectedCategory = nil
                     }
@@ -354,7 +358,7 @@ struct TripSuggestionsView: View {
                 .font(.subheadline)
             }
 
-            Text(category.welcomeMessage)
+            Text(LocalizedStringKey(category.welcomeMessage))
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
@@ -363,7 +367,7 @@ struct TripSuggestionsView: View {
                 ContentUnavailableView(
                     "Coming Soon",
                     systemImage: "sparkles",
-                    description: Text("More \(category.displayName.lowercased()) trips are being added!")
+                    description: Text(LocalizedStringKey("More")) + Text(" ") + Text(LocalizedStringKey(category.displayName)) + Text(" ") + Text(LocalizedStringKey("trips are being added!"))
                 )
             } else {
                 ForEach(categoryResults) { suggestion in
@@ -394,7 +398,7 @@ struct SuggestionCard: View {
             HStack {
                 HStack {
                     Image(systemName: suggestion.category.systemImage)
-                    Text(suggestion.category.displayName)
+                    Text(LocalizedStringKey(suggestion.category.displayName))
                         .font(.caption)
                 }
                 .padding(.horizontal, 8)
@@ -411,14 +415,14 @@ struct SuggestionCard: View {
             }
 
             // Title
-            Text(suggestion.name)
+            Text(suggestion.localizedName)
                 .font(style == .featured ? .headline : .subheadline)
                 .fontWeight(.semibold)
                 .lineLimit(2)
 
             // Dynamic subtitle (shows trending reason if hot)
             if style == .featured {
-                Text(suggestion.dynamicSubtitle)
+                Text(suggestion.localizedDynamicSubtitle)
                     .font(.caption)
                     .foregroundStyle(suggestion.trendingData?.isCurrentlyHot == true ? .orange : .secondary)
                     .lineLimit(2)
@@ -426,8 +430,12 @@ struct SuggestionCard: View {
 
             // Info Row
             HStack(spacing: 12) {
-                Label(suggestion.duration.displayName, systemImage: "clock")
-                Label("\(suggestion.destinations.count) stops", systemImage: "mappin")
+                Label(LocalizedStringKey(suggestion.duration.displayName), systemImage: "clock")
+                Label {
+                    Text("\(suggestion.destinations.count)") + Text(" ") + Text(LocalizedStringKey("stops"))
+                } icon: {
+                    Image(systemName: "mappin")
+                }
             }
             .font(.caption2)
             .foregroundStyle(.secondary)
@@ -477,15 +485,15 @@ struct HotSuggestionCard: View {
             HStack {
                 Image(systemName: "flame.fill")
                     .foregroundStyle(.red)
-                if let reason = suggestion.trendingData?.trendingReason {
-                    Text(reason)
+                if suggestion.trendingData?.trendingReason != nil {
+                    Text(suggestion.localizedDynamicSubtitle)
                         .font(.caption2)
                         .fontWeight(.semibold)
                         .foregroundStyle(.red)
                 }
             }
 
-            Text(suggestion.name)
+            Text(suggestion.localizedName)
                 .font(.headline)
                 .fontWeight(.bold)
                 .lineLimit(2)
@@ -495,7 +503,7 @@ struct HotSuggestionCard: View {
                 HStack(spacing: 4) {
                     Image(systemName: "bubble.left.fill")
                         .font(.caption2)
-                    Text("\(mentions) mentions")
+                    Text(mentions) + Text(" ") + Text(LocalizedStringKey("mentions"))
                         .font(.caption2)
 
                     if let direction = suggestion.trendingData?.trendDirection, direction == .rising {
@@ -508,7 +516,7 @@ struct HotSuggestionCard: View {
             }
 
             HStack(spacing: 12) {
-                Label(suggestion.duration.displayName, systemImage: "clock")
+                Label(LocalizedStringKey(suggestion.duration.displayName), systemImage: "clock")
                 Label(suggestion.budgetLevel.dollarSigns, systemImage: "dollarsign.circle")
             }
             .font(.caption2)
@@ -557,12 +565,12 @@ struct EventRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(event.name)
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
+                        Text(LocalizedStringKey(event.name))
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
 
                     if event.isHappeningNow {
-                        Text("NOW")
+                        Text(LocalizedStringKey("NOW"))
                             .font(.caption2)
                             .fontWeight(.bold)
                             .padding(.horizontal, 6)
@@ -577,7 +585,7 @@ struct EventRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
-                Text(event.location)
+                Text(LocalizedStringKey(event.location))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -617,7 +625,7 @@ struct CategoryButton: View {
             Image(systemName: category.systemImage)
                 .font(.title3)
 
-            Text(category.displayName)
+            Text(LocalizedStringKey(category.displayName))
                 .font(.subheadline)
                 .lineLimit(1)
 
@@ -643,8 +651,8 @@ struct SuggestionListRow: View {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 8) {
-                        Text(suggestion.name)
-                            .font(.headline)
+                    Text(suggestion.localizedName)
+                        .font(.headline)
 
                         // Trending badge
                         if let badge = suggestion.trendingData?.trendingBadge {
@@ -652,7 +660,7 @@ struct SuggestionListRow: View {
                         }
                     }
 
-                    Text(suggestion.dynamicSubtitle)
+                    Text(suggestion.localizedDynamicSubtitle)
                         .font(.subheadline)
                         .foregroundStyle(suggestion.trendingData?.isCurrentlyHot == true ? .orange : .secondary)
                 }
@@ -671,10 +679,14 @@ struct SuggestionListRow: View {
             }
 
             HStack(spacing: 16) {
-                Label(suggestion.duration.displayName, systemImage: "clock")
-                Label("\(suggestion.destinations.count) stops", systemImage: "mappin")
+                Label(LocalizedStringKey(suggestion.duration.displayName), systemImage: "clock")
+                Label {
+                    Text("\(suggestion.destinations.count)") + Text(" ") + Text(LocalizedStringKey("stops"))
+                } icon: {
+                    Image(systemName: "mappin")
+                }
                 Label(suggestion.budgetLevel.dollarSigns, systemImage: "dollarsign.circle")
-                Label(suggestion.difficulty.displayName, systemImage: suggestion.difficulty.systemImage)
+                Label(LocalizedStringKey(suggestion.difficulty.displayName), systemImage: suggestion.difficulty.systemImage)
 
                 // Social mentions
                 if let mentions = suggestion.trendingData?.formattedMentions, suggestion.trendingData?.socialMentions ?? 0 > 1000 {
@@ -693,17 +705,21 @@ struct SuggestionListRow: View {
                 HStack(spacing: 8) {
                     // Seasonal tag if good for current season
                     if suggestion.isGoodForCurrentSeason && suggestion.trendingData?.peakSeason == Season.current {
-                        Text("Perfect for \(Season.current.displayName.components(separatedBy: " ").first ?? "now")")
-                            .font(.caption2)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.green.opacity(0.2))
-                            .foregroundStyle(.green)
-                            .clipShape(Capsule())
+                        (
+                            Text(LocalizedStringKey("Perfect for"))
+                            + Text(" ")
+                            + Text(LocalizedStringKey(Season.current.displayName.components(separatedBy: " ").first ?? "Now"))
+                        )
+                        .font(.caption2)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.green.opacity(0.2))
+                        .foregroundStyle(.green)
+                        .clipShape(Capsule())
                     }
 
                     ForEach(suggestion.tags.prefix(3), id: \.self) { tag in
-                        Text("#\(tag)")
+                        (Text("#") + Text(LocalizedStringKey(tag)))
                             .font(.caption2)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
@@ -749,7 +765,7 @@ struct TrendingBadge: View {
                 Image(systemName: "flame.fill")
                     .font(.caption2)
             }
-            Text(badge)
+            Text(LocalizedStringKey(badge))
                 .font(.caption2)
                 .fontWeight(.semibold)
             if !compact, let direction = direction {

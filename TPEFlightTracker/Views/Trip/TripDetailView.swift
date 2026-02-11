@@ -480,7 +480,7 @@ struct DestinationRowView: View {
                             Link(destination: url) {
                                 HStack(spacing: 4) {
                                     Image(systemName: destination.primaryLinkIcon)
-                                    Text(destination.primaryLinkLabel)
+                                    Text(LocalizedStringKey(destination.primaryLinkLabel))
                                 }
                                 .font(.caption2)
                                 .padding(.horizontal, 10)
@@ -916,7 +916,7 @@ struct EditDestinationView: View {
                 Section("Travel Mode") {
                     Picker("How to get here", selection: $travelMode) {
                         ForEach(TravelMode.allCases) { mode in
-                            Label(mode.displayName, systemImage: mode.systemImage)
+                            Label(LocalizedStringKey(mode.displayName), systemImage: mode.systemImage)
                                 .tag(mode)
                         }
                     }
@@ -1112,7 +1112,7 @@ struct LinkedFlightStatusView: View {
                         .foregroundStyle(.secondary)
 
                     // Status Badge
-                    Text(flight.status.displayName)
+                    Text(LocalizedStringKey(flight.status.displayName))
                         .font(.headline)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)

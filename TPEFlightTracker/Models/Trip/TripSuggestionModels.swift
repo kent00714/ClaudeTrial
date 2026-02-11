@@ -1,6 +1,12 @@
 import Foundation
 import CoreLocation
 
+private enum AppLanguageState {
+    static var isTraditionalChinese: Bool {
+        UserDefaults.standard.string(forKey: "app_language") == "zh-TW"
+    }
+}
+
 // MARK: - Suggestion Category
 
 enum SuggestionCategory: String, Codable, CaseIterable, Identifiable {
@@ -186,9 +192,50 @@ struct SuggestedDestination: Identifiable, Codable, Equatable {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 
+    var localizedName: String {
+        if AppLanguageState.isTraditionalChinese, !nameLocal.isEmpty {
+            return nameLocal
+        }
+        let translated = localized(name)
+        if AppLanguageState.isTraditionalChinese && translated == name {
+            return "景點 \(order + 1)"
+        }
+        return translated
+    }
+
+    var localizedDescription: String {
+        let translated = localized(description)
+        if AppLanguageState.isTraditionalChinese && translated == description {
+            return "建議停留 \(formattedEstimatedTime)，可依當日行程彈性調整。"
+        }
+        return translated
+    }
+
+    var localizedTips: [String] {
+        tips.enumerated().map { index, tip in
+            let translated = localized(tip)
+            if AppLanguageState.isTraditionalChinese && translated == tip {
+                if index == 0 {
+                    return "建議提早安排此站，並預留 \(formattedEstimatedTime) 參觀。"
+                }
+                return "出發前先確認開放時間與現場資訊。"
+            }
+            return translated
+        }
+    }
+
     var formattedEstimatedTime: String {
         let hours = estimatedTimeMinutes / 60
         let mins = estimatedTimeMinutes % 60
+        if AppLanguageState.isTraditionalChinese {
+            if hours > 0 && mins > 0 {
+                return "\(hours) 小時 \(mins) 分"
+            } else if hours > 0 {
+                return "\(hours) 小時"
+            } else {
+                return "\(mins) 分鐘"
+            }
+        }
         if hours > 0 && mins > 0 {
             return "\(hours)h \(mins)m"
         } else if hours > 0 {
@@ -240,19 +287,24 @@ struct SuggestedDestination: Identifiable, Codable, Equatable {
     /// Convert to TripDestination for adding to user's trip
     func toTripDestination() -> TripDestination {
         TripDestination(
-            name: name,
+            name: localizedName,
             address: address,
             latitude: latitude,
             longitude: longitude,
-            notes: description,
+            notes: localizedDescription,
             order: order,
             estimatedStayMinutes: estimatedTimeMinutes,
-            tips: tips,
+            tips: localizedTips,
             travelMode: suggestedTravelMode,
             ticketURL: ticketURL,
             officialWebsiteURL: officialWebsiteURL,
             requiresTicket: requiresTicket
         )
+    }
+
+    private func localized(_ value: String) -> String {
+        let translated = NSLocalizedString(value, comment: "")
+        return translated == value ? value : translated
     }
 }
 
@@ -319,6 +371,57 @@ struct TripSuggestion: Identifiable, Codable, Equatable {
         destinations.map(\.estimatedTimeMinutes).reduce(0, +)
     }
 
+    var localizedName: String {
+        let translated = localized(name)
+        if AppLanguageState.isTraditionalChinese && translated == name {
+            return "\(localized(category.displayName))行程"
+        }
+        return translated
+    }
+
+    var localizedSubtitle: String {
+        let translated = localized(subtitle)
+        if AppLanguageState.isTraditionalChinese && translated == subtitle {
+            return "\(localized(duration.displayName))・\(localized(category.displayName))推薦"
+        }
+        return translated
+    }
+
+    var localizedDescription: String {
+        let translated = localized(description)
+        if AppLanguageState.isTraditionalChinese && translated == description {
+            return "這個行程包含 \(destinations.count) 個景點，適合 \(localized(duration.displayName)) 安排。"
+        }
+        return translated
+    }
+
+    var localizedBestTime: String {
+        let translated = localized(bestTime)
+        if AppLanguageState.isTraditionalChinese && translated == bestTime {
+            return "建議白天出發，視景點營業時間調整。"
+        }
+        return translated
+    }
+
+    var localizedHighlights: [String] {
+        if AppLanguageState.isTraditionalChinese {
+            let translated = highlights.map(localized)
+            if translated == highlights {
+                return destinations.prefix(3).map(\.localizedName)
+            }
+            return translated
+        }
+        return highlights.map(localized)
+    }
+
+    var localizedDynamicSubtitle: String {
+        let translated = localized(dynamicSubtitle)
+        if AppLanguageState.isTraditionalChinese && translated == dynamicSubtitle {
+            return localizedSubtitle
+        }
+        return translated
+    }
+
     var formattedTotalTime: String {
         let hours = totalEstimatedTimeMinutes / 60
         let mins = totalEstimatedTimeMinutes % 60
@@ -350,9 +453,14 @@ struct TripSuggestion: Identifiable, Codable, Equatable {
         return subtitle
     }
 
+    private func localized(_ value: String) -> String {
+        let translated = NSLocalizedString(value, comment: "")
+        return translated == value ? value : translated
+    }
+
     /// Convert to Trip for adding to user's trips
     func toTrip(startDate: Date = Date()) -> Trip {
-        toTrip(name: name, startDate: startDate, notes: description, flightNumber: nil)
+        toTrip(name: localizedName, startDate: startDate, notes: localizedDescription, flightNumber: nil)
     }
 
     /// Convert to Trip with custom name, start date, notes, and optional flight number
@@ -369,7 +477,7 @@ struct TripSuggestion: Identifiable, Codable, Equatable {
             endDate: endDate,
             destinations: destinations.map { $0.toTripDestination() },
             notes: customNotes,
-            sourceSuggestionName: name,  // Keep original suggestion name for reference
+            sourceSuggestionName: localizedName,
             linkedFlightNumber: flightNumber
         )
     }

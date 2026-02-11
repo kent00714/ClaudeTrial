@@ -94,7 +94,7 @@ struct HotelSearchView: View {
                                 } label: {
                                     HStack {
                                         Image(systemName: option.systemImage)
-                                        Text(option.displayName)
+                                        Text(LocalizedStringKey(option.displayName))
                                         if sortBy == option {
                                             Image(systemName: "checkmark")
                                         }
@@ -104,7 +104,7 @@ struct HotelSearchView: View {
                         } label: {
                             HStack(spacing: 4) {
                                 Image(systemName: sortBy.systemImage)
-                                Text(sortBy.displayName)
+                                Text(LocalizedStringKey(sortBy.displayName))
                                 Image(systemName: "chevron.down")
                             }
                             .font(.subheadline)
@@ -352,7 +352,7 @@ struct HotelDetailSheet: View {
                                     HStack {
                                         Image(systemName: link.provider.iconName)
                                             .frame(width: 24)
-                                        Text(link.provider.displayName)
+                                        Text(LocalizedStringKey(link.provider.displayName))
                                         Spacer()
                                         Image(systemName: "arrow.up.right.square")
                                     }
@@ -465,7 +465,7 @@ struct HotelSearchNearView: View {
                             } label: {
                                 HStack {
                                     Image(systemName: option.systemImage)
-                                    Text(option.displayName)
+                                    Text(LocalizedStringKey(option.displayName))
                                     if sortBy == option {
                                         Image(systemName: "checkmark")
                                     }
@@ -475,7 +475,7 @@ struct HotelSearchNearView: View {
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: sortBy.systemImage)
-                            Text(sortBy.displayName)
+                            Text(LocalizedStringKey(sortBy.displayName))
                         }
                         .font(.subheadline)
                     }

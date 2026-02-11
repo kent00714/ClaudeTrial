@@ -73,7 +73,7 @@ struct FlightRowView: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
 
-                if flight.isDelayed, let estimated = flight.estimatedTime {
+                if flight.isDelayed, flight.estimatedTime != nil {
                     Text(timeFormatter.string(from: flight.scheduledTime))
                         .font(.caption2)
                         .strikethrough()
@@ -99,11 +99,14 @@ struct FlightStatusBadge: View {
         case .departed, .inAir, .landed, .arrived: return .green
         case .delayed: return .orange
         case .cancelled: return .red
+        case .active: return .blue
+        case .diverted: return .purple
+        case .unknown: return .gray
         }
     }
 
     var body: some View {
-        Text(status.rawValue)
+        Text(LocalizedStringKey(status.rawValue))
             .font(.caption2)
             .fontWeight(.semibold)
             .padding(.horizontal, 8)

@@ -162,7 +162,7 @@ struct AddDestinationView: View {
                 Section("Travel Mode") {
                     Picker("How will you get here?", selection: $travelMode) {
                         ForEach(TravelMode.allCases) { mode in
-                            Label(mode.displayName, systemImage: mode.systemImage)
+                            Label(LocalizedStringKey(mode.displayName), systemImage: mode.systemImage)
                                 .tag(mode)
                         }
                     }

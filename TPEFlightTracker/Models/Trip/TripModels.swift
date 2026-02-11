@@ -424,13 +424,14 @@ enum TripImportError: Error, LocalizedError {
     case decodingFailed
 
     var errorDescription: String? {
+        let isTraditionalChinese = UserDefaults.standard.string(forKey: "app_language") == "zh-TW"
         switch self {
         case .invalidURL:
-            return "The shared link is not valid."
+            return isTraditionalChinese ? "分享連結無效。" : "The shared link is not valid."
         case .invalidData:
-            return "Could not decode the trip data."
+            return isTraditionalChinese ? "無法解析行程資料。" : "Could not decode the trip data."
         case .decodingFailed:
-            return "Failed to import the trip. The data may be corrupted."
+            return isTraditionalChinese ? "匯入行程失敗，資料可能已損壞。" : "Failed to import the trip. The data may be corrupted."
         }
     }
 }

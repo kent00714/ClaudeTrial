@@ -93,9 +93,15 @@ class TripSuggestionService: TripSuggestionServiceProtocol {
         guard !lowercased.isEmpty else { return [] }
         return suggestions.filter { suggestion in
             suggestion.name.lowercased().contains(lowercased) ||
+            suggestion.localizedName.lowercased().contains(lowercased) ||
             suggestion.description.lowercased().contains(lowercased) ||
+            suggestion.localizedDescription.lowercased().contains(lowercased) ||
             suggestion.tags.contains { $0.lowercased().contains(lowercased) } ||
-            suggestion.destinations.contains { $0.name.lowercased().contains(lowercased) }
+            suggestion.destinations.contains {
+                $0.name.lowercased().contains(lowercased) ||
+                $0.nameLocal.lowercased().contains(lowercased) ||
+                $0.localizedName.lowercased().contains(lowercased)
+            }
         }
     }
 
@@ -233,7 +239,187 @@ class TripSuggestionService: TripSuggestionServiceProtocol {
         suggestions.append(contentsOf: createFamilySuggestions())
         suggestions.append(contentsOf: createViralSuggestions())
 
-        return suggestions
+        suggestions.append(contentsOf: createSocialCombinedSuggestions(from: suggestions))
+        return normalizeSuggestionDestinations(suggestions, minimumStops: 4)
+    }
+
+    private static func createSocialCombinedSuggestions(from source: [TripSuggestion]) -> [TripSuggestion] {
+        let ranked = source
+            .sorted { ($0.trendingData?.socialMentions ?? 0) > ($1.trendingData?.socialMentions ?? 0) }
+
+        guard ranked.count >= 4 else { return [] }
+
+        let destinationPool = uniqueDestinationPool(from: ranked)
+        guard destinationPool.count >= 6 else { return [] }
+
+        let socialTop = ranked.prefix(4)
+        let totalMentions = socialTop.reduce(0) { $0 + ($1.trendingData?.socialMentions ?? 0) }
+        let averageScore = socialTop.reduce(0) { $0 + ($1.trendingData?.trendingScore ?? 70) } / max(socialTop.count, 1)
+
+        let socialBuzzStops = Array(destinationPool.prefix(6)).enumerated().map { offset, destination in
+            cloneDestination(destination, order: offset)
+        }
+        let viralClassicStops = Array(destinationPool.dropFirst(2).prefix(6)).enumerated().map { offset, destination in
+            cloneDestination(destination, order: offset)
+        }
+
+        let socialBuzz = TripSuggestion(
+            name: "Social Buzz Taiwan Loop",
+            subtitle: "Combined from top social media routes",
+            description: "A multi-stop itinerary blended from the most mentioned social-media trips, combining iconic landmarks, food, and trending creator spots.",
+            category: .trending,
+            duration: .threeDays,
+            destinations: socialBuzzStops,
+            highlights: buildHighlights(base: ["Top social picks"], destinations: socialBuzzStops),
+            bestTime: "Start in the morning and continue into the night markets",
+            budgetLevel: .moderate,
+            difficulty: .easy,
+            tags: ["trending", "social", "multi-trip", "must-see"],
+            trendingData: TrendingData(
+                trendingScore: min(100, averageScore + 6),
+                socialMentions: totalMentions,
+                trendDirection: .rising,
+                trendingReason: "Combined from viral social media spots",
+                peakSeason: .all,
+                isCurrentlyHot: true
+            ),
+            bestSeasons: [.all]
+        )
+
+        let viralClassic = TripSuggestion(
+            name: "Viral + Classic Taiwan Mix",
+            subtitle: "Cross-category route from multiple popular trips",
+            description: "A cross-category recommendation that merges classic attractions with viral destinations, designed for travelers who want one complete itinerary.",
+            category: .trending,
+            duration: .weekend,
+            destinations: viralClassicStops,
+            highlights: buildHighlights(base: ["Classic + viral blend"], destinations: viralClassicStops),
+            bestTime: "Use daytime for landmarks and evenings for food and city views",
+            budgetLevel: .moderate,
+            difficulty: .easy,
+            tags: ["trending", "social", "combined", "weekend"],
+            trendingData: TrendingData(
+                trendingScore: min(100, averageScore + 4),
+                socialMentions: Int(Double(totalMentions) * 0.75),
+                trendDirection: .rising,
+                trendingReason: "Creator route mixing classic and viral stops",
+                peakSeason: .all,
+                isCurrentlyHot: true
+            ),
+            bestSeasons: [.all]
+        )
+
+        return [socialBuzz, viralClassic]
+    }
+
+    private static func normalizeSuggestionDestinations(_ source: [TripSuggestion], minimumStops: Int) -> [TripSuggestion] {
+        guard minimumStops > 1 else { return source }
+        let destinationPool = uniqueDestinationPool(from: source)
+
+        return source.map { suggestion in
+            var adjusted = suggestion.destinations.enumerated().map { index, destination in
+                cloneDestination(destination, order: index)
+            }
+
+            if adjusted.count < minimumStops {
+                var usedKeys = Set(adjusted.map(normalizedDestinationKey))
+                for candidate in destinationPool {
+                    let key = normalizedDestinationKey(candidate)
+                    guard !usedKeys.contains(key) else { continue }
+                    adjusted.append(cloneDestination(candidate, order: adjusted.count))
+                    usedKeys.insert(key)
+                    if adjusted.count >= minimumStops { break }
+                }
+            }
+
+            return rebuildSuggestion(
+                suggestion,
+                destinations: adjusted,
+                highlights: buildHighlights(base: suggestion.highlights, destinations: adjusted)
+            )
+        }
+    }
+
+    private static func uniqueDestinationPool(from suggestions: [TripSuggestion]) -> [SuggestedDestination] {
+        let rankedDestinations = suggestions
+            .sorted { ($0.trendingData?.socialMentions ?? 0) > ($1.trendingData?.socialMentions ?? 0) }
+            .flatMap(\.destinations)
+
+        var pool: [SuggestedDestination] = []
+        var seen = Set<String>()
+        for destination in rankedDestinations {
+            let key = normalizedDestinationKey(destination)
+            if seen.insert(key).inserted {
+                pool.append(destination)
+            }
+        }
+        return pool
+    }
+
+    private static func normalizedDestinationKey(_ destination: SuggestedDestination) -> String {
+        if !destination.nameLocal.isEmpty {
+            return destination.nameLocal.lowercased()
+        }
+        return destination.name.lowercased()
+    }
+
+    private static func cloneDestination(_ destination: SuggestedDestination, order: Int) -> SuggestedDestination {
+        SuggestedDestination(
+            id: destination.id,
+            name: destination.name,
+            nameLocal: destination.nameLocal,
+            address: destination.address,
+            latitude: destination.latitude,
+            longitude: destination.longitude,
+            description: destination.description,
+            tips: destination.tips,
+            estimatedTimeMinutes: destination.estimatedTimeMinutes,
+            order: order,
+            suggestedTravelMode: destination.suggestedTravelMode,
+            ticketURL: destination.ticketURL,
+            officialWebsiteURL: destination.officialWebsiteURL,
+            requiresTicket: destination.requiresTicket
+        )
+    }
+
+    private static func buildHighlights(base: [String], destinations: [SuggestedDestination]) -> [String] {
+        let candidates = base + destinations.map(\.name)
+        var unique: [String] = []
+        var seen = Set<String>()
+        for candidate in candidates {
+            let key = candidate.lowercased()
+            if seen.insert(key).inserted {
+                unique.append(candidate)
+            }
+            if unique.count == 4 { break }
+        }
+        return unique
+    }
+
+    private static func rebuildSuggestion(
+        _ suggestion: TripSuggestion,
+        destinations: [SuggestedDestination],
+        highlights: [String]
+    ) -> TripSuggestion {
+        TripSuggestion(
+            id: suggestion.id,
+            name: suggestion.name,
+            subtitle: suggestion.subtitle,
+            description: suggestion.description,
+            category: suggestion.category,
+            duration: suggestion.duration,
+            destinations: destinations,
+            highlights: highlights,
+            bestTime: suggestion.bestTime,
+            budgetLevel: suggestion.budgetLevel,
+            difficulty: suggestion.difficulty,
+            tags: suggestion.tags,
+            seasonalNote: suggestion.seasonalNote,
+            lastUpdated: suggestion.lastUpdated,
+            trendingData: suggestion.trendingData,
+            bestSeasons: suggestion.bestSeasons,
+            relatedEvents: suggestion.relatedEvents
+        )
     }
 
     // MARK: - First Time Visitors

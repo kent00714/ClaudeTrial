@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct MainTabView: View {
+    @EnvironmentObject private var languageManager: LanguageManager
     @StateObject private var flightViewModel = FlightViewModel()
     @StateObject private var tripViewModel = TripViewModel()
     @StateObject private var taxiViewModel = TaxiBookingViewModel()
@@ -15,51 +16,75 @@ struct MainTabView: View {
             // Flights Tab
             FlightsTabView(viewModel: flightViewModel)
                 .tabItem {
-                    Label("Flights", systemImage: "airplane.departure")
+                    Label(languageManager.t(.tabFlights), systemImage: "airplane.departure")
                 }
                 .tag(0)
 
             // Discover Tab (AI Suggestions)
             TripSuggestionsView(tripViewModel: tripViewModel)
                 .tabItem {
-                    Label("Discover", systemImage: "sparkles")
+                    Label(languageManager.t(.tabDiscover), systemImage: "sparkles")
                 }
                 .tag(1)
 
             // Trips Tab
             TripListView(viewModel: tripViewModel)
                 .tabItem {
-                    Label("My Trips", systemImage: "map")
+                    Label(languageManager.t(.tabTrips), systemImage: "map")
                 }
                 .tag(2)
 
             // Taxi Tab
             TaxiBookingListView()
                 .tabItem {
-                    Label("Taxi", systemImage: "car.side.fill")
+                    Label(languageManager.t(.tabTaxi), systemImage: "car.side.fill")
                 }
                 .tag(3)
 
             // Hotels Tab
             HotelSearchView()
                 .tabItem {
-                    Label("Hotels", systemImage: "bed.double.fill")
+                    Label(languageManager.t(.tabHotels), systemImage: "bed.double.fill")
                 }
                 .tag(4)
+        }
+        .overlay(alignment: .topTrailing) {
+            Menu {
+                ForEach(LanguageManager.Language.allCases) { language in
+                    Button {
+                        languageManager.setLanguage(language)
+                    } label: {
+                        if languageManager.currentLanguage == language {
+                            Label(languageManager.displayName(for: language), systemImage: "checkmark")
+                        } else {
+                            Text(languageManager.displayName(for: language))
+                        }
+                    }
+                }
+            } label: {
+                Image(systemName: "globe")
+                    .font(.headline)
+                    .padding(10)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Circle())
+            }
+            .accessibilityLabel(languageManager.t(.language))
+            .padding(.trailing, 16)
+            .padding(.top, 8)
         }
         .onOpenURL { url in
             handleIncomingURL(url)
         }
-        .alert("Trip Imported!", isPresented: $showingImportSuccess) {
-            Button("View Trip") {
+        .alert(languageManager.t(.tripImportedTitle), isPresented: $showingImportSuccess) {
+            Button(languageManager.t(.viewTrip)) {
                 selectedTab = 2 // Switch to My Trips tab
             }
-            Button("OK", role: .cancel) { }
+            Button(languageManager.t(.ok), role: .cancel) { }
         } message: {
-            Text("'\(importedTripName)' has been added to your trips.")
+            Text(languageManager.tripImportedMessage(importedTripName))
         }
-        .alert("Import Failed", isPresented: $showingImportError) {
-            Button("OK", role: .cancel) { }
+        .alert(languageManager.t(.importFailed), isPresented: $showingImportError) {
+            Button(languageManager.t(.ok), role: .cancel) { }
         } message: {
             Text(importErrorMessage)
         }
@@ -96,6 +121,7 @@ struct MainTabView: View {
 }
 
 struct FlightsTabView: View {
+    @EnvironmentObject private var languageManager: LanguageManager
     @ObservedObject var viewModel: FlightViewModel
 
     private var timeFormatter: DateFormatter {
@@ -108,9 +134,9 @@ struct FlightsTabView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 // Direction picker (Arrivals / Departures)
-                Picker("Direction", selection: $viewModel.selectedDirection) {
+                Picker(languageManager.t(.direction), selection: $viewModel.selectedDirection) {
                     ForEach(FlightDirection.allCases) { direction in
-                        Text(direction.rawValue).tag(direction)
+                        Text(languageManager.directionText(direction)).tag(direction)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -120,10 +146,10 @@ struct FlightsTabView: View {
                 // Last updated / next refresh bar
                 if let lastUpdated = viewModel.lastUpdated {
                     HStack {
-                        Text("Updated \(timeFormatter.string(from: lastUpdated))")
+                        Text("\(languageManager.t(.updated)) \(timeFormatter.string(from: lastUpdated))")
                         Spacer()
                         if let nextRefresh = viewModel.nextRefresh {
-                            Text("Next: \(timeFormatter.string(from: nextRefresh))")
+                            Text("\(languageManager.t(.next)): \(timeFormatter.string(from: nextRefresh))")
                         }
                     }
                     .font(.caption2)
@@ -135,8 +161,8 @@ struct FlightsTabView: View {
                 // Flight list
                 FlightListView(viewModel: viewModel)
             }
-            .navigationTitle("TPE Flights")
-            .searchable(text: $viewModel.searchText, prompt: "Search flights, airlines, cities...")
+            .navigationTitle(languageManager.t(.flightsTitle))
+            .searchable(text: $viewModel.searchText, prompt: languageManager.t(.searchPrompt))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -146,11 +172,11 @@ struct FlightsTabView: View {
                     }
                 }
             }
-            .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
-                Button("Retry") {
+            .alert(languageManager.t(.error), isPresented: .constant(viewModel.errorMessage != nil)) {
+                Button(languageManager.t(.retry)) {
                     Task { await viewModel.loadFlights() }
                 }
-                Button("OK", role: .cancel) {
+                Button(languageManager.t(.ok), role: .cancel) {
                     viewModel.errorMessage = nil
                 }
             } message: {
@@ -170,6 +196,7 @@ struct FlightsTabView: View {
 private struct MainTabView_Previews: PreviewProvider {
     static var previews: some View {
         MainTabView()
+            .environmentObject(LanguageManager())
     }
 }
 #endif

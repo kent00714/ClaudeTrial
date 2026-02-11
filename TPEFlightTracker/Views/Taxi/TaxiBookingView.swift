@@ -94,7 +94,7 @@ struct TaxiBookingRowView: View {
         VStack(alignment: .leading, spacing: 8) {
             // Status and time
             HStack {
-                Label(booking.status.displayNameChinese, systemImage: booking.status.systemImage)
+                Label(LocalizedStringKey(booking.status.displayName), systemImage: booking.status.systemImage)
                     .font(.caption)
                     .foregroundStyle(statusColor)
                     .padding(.horizontal, 8)
@@ -498,7 +498,7 @@ struct TaxiBookingDetailView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(statusColor)
 
-            Text(booking.status.displayNameChinese)
+            Text(LocalizedStringKey(booking.status.displayName))
                 .font(.title2)
                 .fontWeight(.semibold)
 

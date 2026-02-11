@@ -33,6 +33,21 @@ class FlightViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Compatibility Properties
+
+    /// Combined flights from arrivals and departures for compatibility
+    var flights: [Flight] {
+        arrivals + departures
+    }
+
+    /// Alias for searchText for compatibility
+    var searchQuery: String {
+        get { searchText }
+        set { searchText = newValue }
+    }
+
+    // MARK: - Loading Methods
+
     func loadFlights() async {
         isLoading = true
         errorMessage = nil
@@ -53,6 +68,11 @@ class FlightViewModel: ObservableObject {
     }
 
     func refresh() async {
+        await loadFlights()
+    }
+
+    /// Alias for loadFlights() for compatibility
+    func searchFlights() async {
         await loadFlights()
     }
 

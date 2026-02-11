@@ -85,7 +85,7 @@ struct SuggestionDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
+                    Button(LocalizedStringKey("Done")) {
                         dismiss()
                     }
                 }
@@ -112,7 +112,7 @@ struct SuggestionDetailView: View {
             // Destination markers
             ForEach(suggestion.destinations) { destination in
                 Annotation(
-                    destination.name,
+                    destination.localizedName,
                     coordinate: destination.coordinate,
                     anchor: .bottom
                 ) {
@@ -178,7 +178,7 @@ struct SuggestionDetailView: View {
                 // Category Badge
                 HStack {
                     Image(systemName: suggestion.category.systemImage)
-                    Text(suggestion.category.displayName)
+                    Text(LocalizedStringKey(suggestion.category.displayName))
                 }
                 .font(.caption)
                 .padding(.horizontal, 10)
@@ -192,7 +192,7 @@ struct SuggestionDetailView: View {
                         if badge == "Hot" {
                             Image(systemName: "flame.fill")
                         }
-                        Text(badge)
+                        Text(LocalizedStringKey(badge))
                         if let direction = suggestion.trendingData?.trendDirection {
                             Image(systemName: direction.systemImage)
                         }
@@ -209,7 +209,7 @@ struct SuggestionDetailView: View {
                 if suggestion.isGoodForCurrentSeason && suggestion.trendingData?.peakSeason == Season.current {
                     HStack {
                         Image(systemName: "star.fill")
-                        Text("Perfect Now")
+                        Text(LocalizedStringKey("Perfect Now"))
                     }
                     .font(.caption)
                     .padding(.horizontal, 10)
@@ -220,17 +220,17 @@ struct SuggestionDetailView: View {
                 }
             }
 
-            Text(suggestion.name)
+            Text(suggestion.localizedName)
                 .font(.title)
                 .fontWeight(.bold)
 
             // Dynamic subtitle with trending reason
-            if suggestion.trendingData?.isCurrentlyHot == true, let reason = suggestion.trendingData?.trendingReason {
-                Text(reason)
+            if suggestion.trendingData?.isCurrentlyHot == true, suggestion.trendingData?.trendingReason != nil {
+                Text(suggestion.localizedDynamicSubtitle)
                     .font(.subheadline)
                     .foregroundStyle(.orange)
             } else {
-                Text(suggestion.subtitle)
+                Text(suggestion.localizedSubtitle)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -240,7 +240,7 @@ struct SuggestionDetailView: View {
                 HStack(spacing: 8) {
                     HStack(spacing: 4) {
                         Image(systemName: "bubble.left.fill")
-                        Text("\(mentions) social mentions")
+                        Text(mentions) + Text(" ") + Text(LocalizedStringKey("mentions"))
                     }
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -305,16 +305,16 @@ struct SuggestionDetailView: View {
 
     private var descriptionSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("About This Trip")
+            Text(LocalizedStringKey("About This Trip"))
                 .font(.headline)
 
-            Text(suggestion.description)
+            Text(suggestion.localizedDescription)
                 .font(.body)
                 .foregroundStyle(.secondary)
 
             HStack {
                 Image(systemName: "sun.max")
-                Text("Best Time: \(suggestion.bestTime)")
+                Text(LocalizedStringKey("Best Time:")) + Text(" ") + Text(suggestion.localizedBestTime)
             }
             .font(.subheadline)
             .foregroundStyle(.secondary)
@@ -327,16 +327,16 @@ struct SuggestionDetailView: View {
 
     private var highlightsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Highlights")
+            Text(LocalizedStringKey("Highlights"))
                 .font(.headline)
 
             FlowLayout(spacing: 8) {
-                ForEach(suggestion.highlights, id: \.self) { highlight in
+                ForEach(suggestion.localizedHighlights, id: \.self) { highlight in
                     HStack(spacing: 4) {
                         Image(systemName: "star.fill")
                             .font(.caption2)
                             .foregroundStyle(.yellow)
-                        Text(highlight)
+                        Text(LocalizedStringKey(highlight))
                             .font(.subheadline)
                     }
                     .padding(.horizontal, 12)
@@ -353,7 +353,7 @@ struct SuggestionDetailView: View {
 
     private var bestSeasonsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Best Time to Visit")
+            Text(LocalizedStringKey("Best Time to Visit"))
                 .font(.headline)
 
             HStack(spacing: 8) {
@@ -361,7 +361,7 @@ struct SuggestionDetailView: View {
                     let isCurrent = season == Season.current
                     HStack(spacing: 4) {
                         Image(systemName: seasonIcon(for: season))
-                        Text(season.displayName.components(separatedBy: " ").first ?? season.rawValue.capitalized)
+                        Text(LocalizedStringKey(season.displayName.components(separatedBy: " ").first ?? season.rawValue.capitalized))
                     }
                     .font(.caption)
                     .padding(.horizontal, 12)
@@ -380,7 +380,7 @@ struct SuggestionDetailView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
-                    Text("Great time to visit!")
+                    Text(LocalizedStringKey("Great time to visit!"))
                         .foregroundStyle(.green)
                 }
                 .font(.caption)
@@ -406,7 +406,7 @@ struct SuggestionDetailView: View {
             Image(systemName: "info.circle.fill")
                 .foregroundStyle(.blue)
 
-            Text(note)
+            Text(LocalizedStringKey(note))
                 .font(.subheadline)
         }
         .padding()
@@ -419,7 +419,7 @@ struct SuggestionDetailView: View {
 
     private var destinationsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Itinerary")
+            Text(LocalizedStringKey("Itinerary"))
                 .font(.headline)
 
             ForEach(Array(suggestion.destinations.enumerated()), id: \.element.id) { index, destination in
@@ -445,7 +445,7 @@ struct SuggestionDetailView: View {
             } label: {
                 HStack {
                     Image(systemName: "plus.circle.fill")
-                    Text("Add to My Trips")
+                    Text(LocalizedStringKey("Add to My Trips"))
                 }
                 .font(.headline)
                 .frame(maxWidth: .infinity)
@@ -456,7 +456,7 @@ struct SuggestionDetailView: View {
             }
 
             // Customization hint
-            Text("You can customize dates, destinations, and notes after adding")
+            Text(LocalizedStringKey("You can customize dates, destinations, and notes after adding"))
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -478,11 +478,11 @@ struct InfoItem: View {
                 .font(.title3)
                 .foregroundStyle(.blue)
 
-            Text(value)
+            Text(LocalizedStringKey(value))
                 .font(.caption)
                 .fontWeight(.semibold)
 
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
@@ -521,23 +521,23 @@ struct DestinationRow: View {
 
             // Content
             VStack(alignment: .leading, spacing: 8) {
-                Text(destination.name)
+                Text(destination.localizedName)
                     .font(.headline)
 
-                if !destination.nameLocal.isEmpty {
+                if !destination.nameLocal.isEmpty && destination.localizedName != destination.nameLocal {
                     Text(destination.nameLocal)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
 
-                Text(destination.description)
+                Text(destination.localizedDescription)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(3)
 
                 HStack(spacing: 16) {
                     Label(destination.formattedEstimatedTime, systemImage: "clock")
-                    Label(destination.suggestedTravelMode.displayName, systemImage: destination.suggestedTravelMode.systemImage)
+                    Label(LocalizedStringKey(destination.suggestedTravelMode.displayName), systemImage: destination.suggestedTravelMode.systemImage)
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -547,7 +547,7 @@ struct DestinationRow: View {
                     Link(destination: url) {
                         HStack(spacing: 4) {
                             Image(systemName: destination.primaryLinkIcon)
-                            Text(destination.primaryLinkLabel)
+                            Text(LocalizedStringKey(destination.primaryLinkLabel))
                         }
                         .font(.caption)
                         .padding(.horizontal, 10)
@@ -559,11 +559,11 @@ struct DestinationRow: View {
                 }
 
                 // Tips preview
-                if let firstTip = destination.tips.first {
+                if let firstTip = destination.localizedTips.first {
                     HStack(alignment: .top, spacing: 4) {
                         Image(systemName: "lightbulb.fill")
                             .foregroundStyle(.yellow)
-                        Text(firstTip)
+                        Text(LocalizedStringKey(firstTip))
                             .lineLimit(2)
                     }
                     .font(.caption)
@@ -599,11 +599,11 @@ struct DestinationDetailSheet: View {
 
                     // Name
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(destination.name)
+                        Text(destination.localizedName)
                             .font(.title2)
                             .fontWeight(.bold)
 
-                        if !destination.nameLocal.isEmpty {
+                        if !destination.nameLocal.isEmpty && destination.localizedName != destination.nameLocal {
                             Text(destination.nameLocal)
                                 .font(.title3)
                                 .foregroundStyle(.secondary)
@@ -621,10 +621,10 @@ struct DestinationDetailSheet: View {
                     // Description
                     if !destination.description.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("About")
+                            Text(LocalizedStringKey("About"))
                                 .font(.headline)
 
-                            Text(destination.description)
+                            Text(destination.localizedDescription)
                                 .font(.body)
                                 .foregroundStyle(.secondary)
                         }
@@ -633,7 +633,7 @@ struct DestinationDetailSheet: View {
                     // Info
                     HStack(spacing: 24) {
                         VStack(alignment: .leading) {
-                            Text("Time Needed")
+                            Text(LocalizedStringKey("Time Needed"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             Text(destination.formattedEstimatedTime)
@@ -641,12 +641,12 @@ struct DestinationDetailSheet: View {
                         }
 
                         VStack(alignment: .leading) {
-                            Text("Travel By")
+                            Text(LocalizedStringKey("Travel By"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             HStack {
                                 Image(systemName: destination.suggestedTravelMode.systemImage)
-                                Text(destination.suggestedTravelMode.displayName)
+                                Text(LocalizedStringKey(destination.suggestedTravelMode.displayName))
                             }
                             .font(.headline)
                         }
@@ -655,14 +655,14 @@ struct DestinationDetailSheet: View {
                     // Tips
                     if !destination.tips.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
-                            Text("Tips")
+                            Text(LocalizedStringKey("Tips"))
                                 .font(.headline)
 
-                            ForEach(destination.tips, id: \.self) { tip in
+                            ForEach(destination.localizedTips, id: \.self) { tip in
                                 HStack(alignment: .top, spacing: 8) {
                                     Image(systemName: "lightbulb.fill")
                                         .foregroundStyle(.yellow)
-                                    Text(tip)
+                                    Text(LocalizedStringKey(tip))
                                 }
                                 .font(.subheadline)
                             }
@@ -679,7 +679,7 @@ struct DestinationDetailSheet: View {
                             Link(destination: url) {
                                 HStack {
                                     Image(systemName: "ticket.fill")
-                                    Text("Buy Tickets")
+                                    Text(LocalizedStringKey("Buy Tickets"))
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding()
@@ -693,7 +693,7 @@ struct DestinationDetailSheet: View {
                             Link(destination: url) {
                                 HStack {
                                     Image(systemName: "globe")
-                                    Text("Official Website")
+                                    Text(LocalizedStringKey("Official Website"))
                                 }
                                 .frame(maxWidth: .infinity)
                                 .padding()
@@ -709,7 +709,7 @@ struct DestinationDetailSheet: View {
                         } label: {
                             HStack {
                                 Image(systemName: "map.fill")
-                                Text("Open in Maps")
+                                Text(LocalizedStringKey("Open in Maps"))
                             }
                             .frame(maxWidth: .infinity)
                             .padding()
@@ -721,11 +721,11 @@ struct DestinationDetailSheet: View {
                 }
                 .padding()
             }
-            .navigationTitle("Destination Details")
+            .navigationTitle(LocalizedStringKey("Destination Details"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
+                    Button(LocalizedStringKey("Done")) {
                         dismiss()
                     }
                 }
@@ -736,7 +736,7 @@ struct DestinationDetailSheet: View {
     private func openInMaps() {
         let placemark = MKPlacemark(coordinate: destination.coordinate)
         let mapItem = MKMapItem(placemark: placemark)
-        mapItem.name = destination.name
+        mapItem.name = destination.localizedName
         mapItem.openInMaps()
     }
 }
@@ -803,8 +803,8 @@ struct CustomizeTripSheet: View {
     init(suggestion: TripSuggestion, onConfirm: @escaping (String, Date, String, String?) -> Void) {
         self.suggestion = suggestion
         self.onConfirm = onConfirm
-        _tripName = State(initialValue: suggestion.name)
-        _notes = State(initialValue: suggestion.description)
+        _tripName = State(initialValue: suggestion.localizedName)
+        _notes = State(initialValue: suggestion.localizedDescription)
     }
 
     var endDate: Date {
@@ -829,34 +829,38 @@ struct CustomizeTripSheet: View {
                         HStack {
                             Image(systemName: suggestion.category.systemImage)
                                 .foregroundStyle(.blue)
-                            Text(suggestion.category.displayName)
+                            Text(LocalizedStringKey(suggestion.category.displayName))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
 
-                        Text(suggestion.name)
+                        Text(suggestion.localizedName)
                             .font(.headline)
 
                         HStack(spacing: 16) {
-                            Label("\(suggestion.destinations.count) stops", systemImage: "mappin")
-                            Label(suggestion.duration.displayName, systemImage: "clock")
+                            Label {
+                                Text("\(suggestion.destinations.count)") + Text(" ") + Text(LocalizedStringKey("stops"))
+                            } icon: {
+                                Image(systemName: "mappin")
+                            }
+                            Label(LocalizedStringKey(suggestion.duration.displayName), systemImage: "clock")
                             Label(suggestion.budgetLevel.dollarSigns, systemImage: "dollarsign.circle")
                         }
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     }
                 } header: {
-                    Text("Adding to Your Trips")
+                    Text(LocalizedStringKey("Adding to Your Trips"))
                 }
 
                 // Customize Name & Dates
-                Section("Customize") {
-                    TextField("Trip Name", text: $tripName)
+                Section(LocalizedStringKey("Customize")) {
+                    TextField(LocalizedStringKey("Trip Name"), text: $tripName)
 
-                    DatePicker("Start Date", selection: $startDate, displayedComponents: .date)
+                    DatePicker(LocalizedStringKey("Start Date"), selection: $startDate, displayedComponents: .date)
 
                     HStack {
-                        Text("End Date")
+                        Text(LocalizedStringKey("End Date"))
                         Spacer()
                         Text(formatDate(endDate))
                             .foregroundStyle(.secondary)
@@ -868,18 +872,18 @@ struct CustomizeTripSheet: View {
                     HStack {
                         Image(systemName: "airplane")
                             .foregroundStyle(.blue)
-                        TextField("Flight Number (e.g., CI123)", text: $flightNumber)
+                        TextField(LocalizedStringKey("Flight Number (e.g., CI123)"), text: $flightNumber)
                             .textInputAutocapitalization(.characters)
                             .autocorrectionDisabled()
                     }
                 } header: {
-                    Text("Flight Tracking (Optional)")
+                    Text(LocalizedStringKey("Flight Tracking (Optional)"))
                 } footer: {
-                    Text("Link your flight to track its status. Enter your flight number to TPE (e.g., CI123, BR872).")
+                    Text(LocalizedStringKey("Link your flight to track its status. Enter your flight number to TPE (e.g., CI123, BR872)."))
                 }
 
                 // Optional Notes
-                Section("Notes (Optional)") {
+                Section(LocalizedStringKey("Notes (Optional)")) {
                     TextEditor(text: $notes)
                         .frame(minHeight: 60)
                 }
@@ -891,33 +895,33 @@ struct CustomizeTripSheet: View {
                             Text("\(destination.order + 1).")
                                 .foregroundStyle(.blue)
                                 .fontWeight(.semibold)
-                            Text(destination.name)
+                            Text(destination.localizedName)
                                 .lineLimit(1)
                         }
                         .font(.subheadline)
                     }
 
                     if suggestion.destinations.count > 3 {
-                        Text("+ \(suggestion.destinations.count - 3) more destinations")
+                        Text("+ \(suggestion.destinations.count - 3)") + Text(" ") + Text(LocalizedStringKey("more destinations"))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 } header: {
-                    Text("Included Destinations")
+                    Text(LocalizedStringKey("Included Destinations"))
                 } footer: {
-                    Text("You can add, remove, or reorder destinations after adding to your trips.")
+                    Text(LocalizedStringKey("You can add, remove, or reorder destinations after adding to your trips."))
                 }
             }
-            .navigationTitle("Add Trip")
+            .navigationTitle(LocalizedStringKey("Add Trip"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                    Button(LocalizedStringKey("Cancel")) {
                         dismiss()
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add Trip") {
+                    Button(LocalizedStringKey("Add Trip")) {
                         onConfirm(tripName, startDate, notes, cleanedFlightNumber)
                     }
                     .fontWeight(.semibold)
