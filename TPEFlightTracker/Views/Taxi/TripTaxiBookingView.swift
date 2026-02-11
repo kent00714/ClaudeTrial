@@ -265,36 +265,40 @@ struct DestinationTaxiButton: View {
     }
 }
 
-#Preview {
-    let trip = Trip(
-        name: "Test Trip",
-        startDate: Date(),
-        endDate: Date().addingTimeInterval(86400),
-        destinations: [
-            TripDestination(
-                name: "Taipei 101",
-                address: "Xinyi District",
-                latitude: 25.0339,
-                longitude: 121.5645,
-                order: 0
-            ),
-            TripDestination(
-                name: "Shilin Night Market",
-                address: "Shilin District",
-                latitude: 25.0879,
-                longitude: 121.5243,
-                order: 1,
-                travelDurationMinutes: 25,
-                travelDistanceMeters: 8000,
-                travelMode: .taxi
-            )
-        ]
-    )
+#if DEBUG
+private struct BookTaxiForTripView_Previews: PreviewProvider {
+    static var previews: some View {
+        let trip = Trip(
+            name: "Test Trip",
+            startDate: Date(),
+            endDate: Date().addingTimeInterval(86400),
+            destinations: [
+                TripDestination(
+                    name: "Taipei 101",
+                    address: "Xinyi District",
+                    latitude: 25.0339,
+                    longitude: 121.5645,
+                    order: 0
+                ),
+                TripDestination(
+                    name: "Shilin Night Market",
+                    address: "Shilin District",
+                    latitude: 25.0879,
+                    longitude: 121.5243,
+                    order: 1,
+                    travelDurationMinutes: 25,
+                    travelDistanceMeters: 8000,
+                    travelMode: .taxi
+                )
+            ]
+        )
 
-    return BookTaxiForTripView(
-        trip: trip,
-        fromDestination: trip.destinations[0],
-        toDestination: trip.destinations[1],
-        taxiViewModel: TaxiBookingViewModel()
-    )
+        return BookTaxiForTripView(
+            trip: trip,
+            fromDestination: trip.destinations[0],
+            toDestination: trip.destinations[1],
+            taxiViewModel: TaxiBookingViewModel()
+        )
+    }
 }
+#endif

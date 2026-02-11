@@ -714,7 +714,7 @@ struct DestinationDetailSheet: View {
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(destination.requiresTicket || destination.officialWebsiteURL != nil ? Color.gray.opacity(0.2) : Color.blue)
-                            .foregroundStyle(destination.requiresTicket || destination.officialWebsiteURL != nil ? .primary : .white)
+                            .foregroundStyle(destination.requiresTicket || destination.officialWebsiteURL != nil ? Color.primary : Color.white)
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
                     }

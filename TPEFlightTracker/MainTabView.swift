@@ -166,6 +166,10 @@ struct FlightsTabView: View {
     }
 }
 
-#Preview {
-    MainTabView()
+#if DEBUG
+private struct MainTabView_Previews: PreviewProvider {
+    static var previews: some View {
+        MainTabView()
+    }
 }
+#endif

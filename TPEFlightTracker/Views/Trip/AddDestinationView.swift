@@ -241,22 +241,13 @@ struct AddDestinationView: View {
     }
 }
 
-extension CLPlacemark {
-    var formattedAddress: String? {
-        let components = [
-            subThoroughfare,
-            thoroughfare,
-            locality,
-            administrativeArea,
-            country
-        ].compactMap { $0 }
-        return components.isEmpty ? nil : components.joined(separator: ", ")
+#if DEBUG
+private struct AddDestinationView_Previews: PreviewProvider {
+    static var previews: some View {
+        AddDestinationView(
+            trip: Trip(name: "Test", startDate: Date(), endDate: Date()),
+            viewModel: TripViewModel()
+        )
     }
 }
-
-#Preview {
-    AddDestinationView(
-        trip: Trip(name: "Test", startDate: Date(), endDate: Date()),
-        viewModel: TripViewModel()
-    )
-}
+#endif

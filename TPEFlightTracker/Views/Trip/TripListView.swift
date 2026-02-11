@@ -182,6 +182,10 @@ struct AddTripView: View {
     }
 }
 
-#Preview {
-    TripListView(viewModel: TripViewModel())
+#if DEBUG
+private struct TripListView_Previews: PreviewProvider {
+    static var previews: some View {
+        TripListView(viewModel: TripViewModel())
+    }
 }
+#endif

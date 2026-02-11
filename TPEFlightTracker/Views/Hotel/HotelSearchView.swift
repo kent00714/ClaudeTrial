@@ -526,6 +526,10 @@ struct HotelSearchNearView: View {
     }
 }
 
-#Preview {
-    HotelSearchView()
+#if DEBUG
+private struct NearbyHotelSearchView_Previews: PreviewProvider {
+    static var previews: some View {
+        HotelSearchView()
+    }
 }
+#endif

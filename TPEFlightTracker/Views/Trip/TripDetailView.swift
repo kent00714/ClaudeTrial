@@ -4,7 +4,7 @@ import MapKit
 struct TripDetailView: View {
     let trip: Trip
     @ObservedObject var viewModel: TripViewModel
-    @ObservedObject var flightViewModel: FlightViewModel
+    @StateObject var flightViewModel: FlightViewModel
     @StateObject private var taxiViewModel = TaxiBookingViewModel()
     @State private var showingAddDestination = false
     @State private var showingEditTrip = false
@@ -14,10 +14,15 @@ struct TripDetailView: View {
     @State private var showingTaxiBooking: (from: TripDestination, to: TripDestination)?
     @State private var showingHotelSearch: TripDestination?
 
-    init(trip: Trip, viewModel: TripViewModel, flightViewModel: FlightViewModel = FlightViewModel()) {
+    init(trip: Trip, viewModel: TripViewModel, flightViewModel: FlightViewModel? = nil) {
         self.trip = trip
         self.viewModel = viewModel
-        self.flightViewModel = flightViewModel
+        // Defer creation of the @MainActor view model to the main actor by initializing the StateObject here.
+        if let flightVM = flightViewModel {
+            _flightViewModel = StateObject(wrappedValue: flightVM)
+        } else {
+            _flightViewModel = StateObject(wrappedValue: FlightViewModel())
+        }
     }
 
     var body: some View {
@@ -584,7 +589,7 @@ struct TripMapView: View {
             await routeManager.calculateRoutes(for: destinations)
         }
         .onChange(of: destinations) { _, newDestinations in
-            Task {
+            Task { @MainActor in
                 await routeManager.calculateRoutes(for: newDestinations)
             }
         }
@@ -1150,18 +1155,16 @@ struct LinkedFlightStatusView: View {
 
                 // Time Info
                 VStack(spacing: 16) {
-                    if let scheduledTime = flight.scheduledTime {
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text("Scheduled")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Text(formatTime(scheduledTime))
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
-                            }
-                            Spacer()
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("Scheduled")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(formatTime(flight.scheduledTime))
+                                .font(.title2)
+                                .fontWeight(.semibold)
                         }
+                        Spacer()
                     }
 
                     if let estimatedTime = flight.estimatedTime {
@@ -1200,37 +1203,33 @@ struct LinkedFlightStatusView: View {
                 .padding(.horizontal)
 
                 // Terminal & Gate
-                if flight.terminal != nil || flight.gate != nil {
-                    HStack(spacing: 24) {
-                        if let terminal = flight.terminal {
-                            VStack {
-                                Text("Terminal")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Text(terminal)
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
-
-                        if let gate = flight.gate {
-                            VStack {
-                                Text("Gate")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                Text(gate)
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                            }
-                            .frame(maxWidth: .infinity)
-                        }
+                HStack(spacing: 24) {
+                    VStack {
+                        Text("Terminal")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(flight.terminal)
+                            .font(.title2)
+                            .fontWeight(.bold)
                     }
-                    .padding()
-                    .background(Color(.systemGray6))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .padding(.horizontal)
+                    .frame(maxWidth: .infinity)
+
+                    if let gate = flight.gate {
+                        VStack {
+                            Text("Gate")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(gate)
+                                .font(.title2)
+                                .fontWeight(.bold)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
                 }
+                .padding()
+                .background(Color(.systemGray6))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal)
 
                 // Refresh Button
                 Button {
@@ -1257,9 +1256,9 @@ struct LinkedFlightStatusView: View {
 
     private func statusColor(for status: FlightStatus) -> Color {
         switch status {
-        case .scheduled, .active:
+        case .scheduled, .active, .boarding:
             return .blue
-        case .landed:
+        case .landed, .arrived, .departed, .inAir:
             return .green
         case .cancelled:
             return .red
@@ -1279,36 +1278,40 @@ struct LinkedFlightStatusView: View {
     }
 }
 
-#Preview {
-    NavigationStack {
-        TripDetailView(
-            trip: Trip(
-                name: "Tokyo Trip",
-                startDate: Date(),
-                endDate: Date().addingTimeInterval(86400 * 5),
-                destinations: [
-                    TripDestination(
-                        name: "Tokyo Tower",
-                        address: "4-2-8 Shibakoen, Minato City, Tokyo",
-                        latitude: 35.6586,
-                        longitude: 139.7454,
-                        order: 0,
-                        estimatedStayMinutes: 90,
-                        tips: ["Visit at sunset for amazing views"]
-                    ),
-                    TripDestination(
-                        name: "Senso-ji Temple",
-                        address: "2-3-1 Asakusa, Taito City, Tokyo",
-                        latitude: 35.7148,
-                        longitude: 139.7967,
-                        order: 1,
-                        travelDurationMinutes: 25,
-                        travelDistanceMeters: 8500
-                    )
-                ],
-                sourceSuggestionName: "Essential Tokyo"
-            ),
-            viewModel: TripViewModel()
-        )
+#if DEBUG
+private struct TripDetailView_Previews: PreviewProvider {
+    static var previews: some View {
+        NavigationStack {
+            TripDetailView(
+                trip: Trip(
+                    name: "Tokyo Trip",
+                    startDate: Date(),
+                    endDate: Date().addingTimeInterval(86400 * 5),
+                    destinations: [
+                        TripDestination(
+                            name: "Tokyo Tower",
+                            address: "4-2-8 Shibakoen, Minato City, Tokyo",
+                            latitude: 35.6586,
+                            longitude: 139.7454,
+                            order: 0,
+                            estimatedStayMinutes: 90,
+                            tips: ["Visit at sunset for amazing views"]
+                        ),
+                        TripDestination(
+                            name: "Senso-ji Temple",
+                            address: "2-3-1 Asakusa, Taito City, Tokyo",
+                            latitude: 35.7148,
+                            longitude: 139.7967,
+                            order: 1,
+                            travelDurationMinutes: 25,
+                            travelDistanceMeters: 8500
+                        )
+                    ],
+                    sourceSuggestionName: "Essential Tokyo"
+                ),
+                viewModel: TripViewModel()
+            )
+        }
     }
 }
+#endif

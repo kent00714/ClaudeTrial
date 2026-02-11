@@ -695,6 +695,10 @@ extension MKPlacemark {
     }
 }
 
-#Preview {
-    TaxiBookingListView()
+#if DEBUG
+private struct TaxiBookingListView_Previews: PreviewProvider {
+    static var previews: some View {
+        TaxiBookingListView()
+    }
 }
+#endif

@@ -16,6 +16,9 @@ enum FlightStatus: String, Codable {
     case arrived = "Arrived"
     case delayed = "Delayed"
     case cancelled = "Cancelled"
+    case active = "Active"
+    case diverted = "Diverted"
+    case unknown = "Unknown"
 
     var color: String {
         switch self {
@@ -25,7 +28,14 @@ enum FlightStatus: String, Codable {
         case .landed, .arrived: return "green"
         case .delayed: return "orange"
         case .cancelled: return "red"
+        case .active: return "blue"
+        case .diverted: return "purple"
+        case .unknown: return "gray"
         }
+    }
+
+    var displayName: String {
+        return rawValue
     }
 }
 
@@ -68,6 +78,22 @@ struct Flight: Identifiable, Codable {
 
     var isDelayed: Bool {
         status == .delayed
+    }
+
+    var departureAirport: String {
+        origin.iata
+    }
+
+    var departureCity: String {
+        origin.city
+    }
+
+    var arrivalAirport: String {
+        destination.iata
+    }
+
+    var arrivalCity: String {
+        destination.city
     }
 }
 

@@ -7,61 +7,68 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A1000001 /* TPEFlightTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001; };
-		A1000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002; };
-		A1000003 /* FlightModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003; };
-		A1000004 /* FlightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004; };
-		A1000005 /* FlightListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000005; };
-		A1000006 /* FlightDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000006; };
-		A1000007 /* FlightViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007; };
-		A1000008 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000008; };
-		A1000009 /* APIConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000009; };
-		A1000010 /* AirLabsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000010; };
-		A1000011 /* AirportLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000011; };
-		A1000012 /* AirlineLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000012; };
-		A1000013 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000013; };
-		A1000014 /* TripModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000014; };
-		A1000015 /* TripViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000015; };
-		A1000016 /* DirectionsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000016; };
-		A1000017 /* TripService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000017; };
-		A1000018 /* TripListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000018; };
-		A1000019 /* TripDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000019; };
-		A1000020 /* AddDestinationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000020; };
-		A1000021 /* TripSuggestionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000021; };
-		A1000022 /* TripSuggestionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000022; };
-		A1000023 /* TripSuggestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000023; };
-		A1000024 /* SuggestionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000024; };
-		B1000001 /* FlightModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001; };
-		B1000002 /* FlightViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002; };
-		B1000003 /* FlightServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003; };
-		B1000004 /* ViewRenderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000004; };
-		B1000005 /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000005; };
-		B1000006 /* TripModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000006; };
-		B1000007 /* TripViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000007; };
-		B1000008 /* TripServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000008; };
-		B1000009 /* DirectionsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000009; };
-		B1000010 /* TripSuggestionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000010; };
+		01AD5E3C2F384F3D0066520F /* HotelSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01AD5E3B2F384F3D0066520F /* HotelSearchView.swift */; };
+		01AD5E3E2F38504E0066520F /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01AD5E3D2F38504E0066520F /* NotificationService.swift */; };
+		01AD5E402F3850690066520F /* HotelSearchNearView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01AD5E3F2F3850690066520F /* HotelSearchNearView.swift */; };
+		01AD5E422F3851A70066520F /* MapKitExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01AD5E412F3851A70066520F /* MapKitExtensions.swift */; };
+		A1000001 /* TPEFlightTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001 /* TPEFlightTrackerApp.swift */; };
+		A1000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002 /* ContentView.swift */; };
+		A1000003 /* FlightModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003 /* FlightModel.swift */; };
+		A1000004 /* FlightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000004 /* FlightService.swift */; };
+		A1000005 /* FlightListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000005 /* FlightListView.swift */; };
+		A1000006 /* FlightDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000006 /* FlightDetailView.swift */; };
+		A1000007 /* FlightViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000007 /* FlightViewModel.swift */; };
+		A1000008 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000008 /* Assets.xcassets */; };
+		A1000009 /* APIConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000009 /* APIConfig.swift */; };
+		A1000010 /* AirLabsModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000010 /* AirLabsModels.swift */; };
+		A1000011 /* AirportLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000011 /* AirportLookup.swift */; };
+		A1000012 /* AirlineLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000012 /* AirlineLookup.swift */; };
+		A1000013 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000013 /* MainTabView.swift */; };
+		A1000014 /* TripModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000014 /* TripModels.swift */; };
+		A1000015 /* TripViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000015 /* TripViewModel.swift */; };
+		A1000016 /* DirectionsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000016 /* DirectionsService.swift */; };
+		A1000017 /* TripService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000017 /* TripService.swift */; };
+		A1000018 /* TripListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000018 /* TripListView.swift */; };
+		A1000019 /* TripDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000019 /* TripDetailView.swift */; };
+		A1000020 /* AddDestinationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000020 /* AddDestinationView.swift */; };
+		A1000021 /* TripSuggestionModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000021 /* TripSuggestionModels.swift */; };
+		A1000022 /* TripSuggestionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000022 /* TripSuggestionService.swift */; };
+		A1000023 /* TripSuggestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000023 /* TripSuggestionsView.swift */; };
+		A1000024 /* SuggestionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000024 /* SuggestionDetailView.swift */; };
+		A1000025 /* TaxiModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000025 /* TaxiModels.swift */; };
+		A1000026 /* TaxiBookingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000026 /* TaxiBookingView.swift */; };
+		A1000027 /* TripTaxiBookingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000027 /* TripTaxiBookingView.swift */; };
+		A1000028 /* TaxiBookingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000028 /* TaxiBookingService.swift */; };
+		A1000029 /* TaxiCorpAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000029 /* TaxiCorpAPI.swift */; };
+		A1000030 /* TaxiCorpAPIReal.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000030 /* TaxiCorpAPIReal.swift */; };
+		A1000031 /* TaxiCorpAPIMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000031 /* TaxiCorpAPIMock.swift */; };
+		B1000001 /* FlightModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001 /* FlightModelTests.swift */; };
+		B1000002 /* FlightViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002 /* FlightViewModelTests.swift */; };
+		B1000003 /* FlightServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003 /* FlightServiceTests.swift */; };
+		B1000004 /* ViewRenderingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000004 /* ViewRenderingTests.swift */; };
+		B1000005 /* TestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000005 /* TestHelpers.swift */; };
+		B1000006 /* TripModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000006 /* TripModelTests.swift */; };
+		B1000007 /* TripViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000007 /* TripViewModelTests.swift */; };
+		B1000008 /* TripServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000008 /* TripServiceTests.swift */; };
+		B1000009 /* DirectionsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000009 /* DirectionsServiceTests.swift */; };
+		B1000010 /* TripSuggestionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000010 /* TripSuggestionServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
 		B7000001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = A4000001;
+			containerPortal = A4000001 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = A4000000;
 			remoteInfo = TPEFlightTracker;
 		};
 /* End PBXContainerItemProxy section */
 
-/* Begin PBXTargetDependency section */
-		B7000002 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = A4000000;
-			targetProxy = B7000001;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin PBXFileReference section */
+		01AD5E3B2F384F3D0066520F /* HotelSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotelSearchView.swift; sourceTree = "<group>"; };
+		01AD5E3D2F38504E0066520F /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		01AD5E3F2F3850690066520F /* HotelSearchNearView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotelSearchNearView.swift; sourceTree = "<group>"; };
+		01AD5E412F3851A70066520F /* MapKitExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapKitExtensions.swift; sourceTree = "<group>"; };
 		A2000000 /* TPEFlightTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = TPEFlightTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A2000001 /* TPEFlightTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TPEFlightTrackerApp.swift; sourceTree = "<group>"; };
 		A2000002 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -87,6 +94,13 @@
 		A2000022 /* TripSuggestionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripSuggestionService.swift; sourceTree = "<group>"; };
 		A2000023 /* TripSuggestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripSuggestionsView.swift; sourceTree = "<group>"; };
 		A2000024 /* SuggestionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionDetailView.swift; sourceTree = "<group>"; };
+		A2000025 /* TaxiModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxiModels.swift; sourceTree = "<group>"; };
+		A2000026 /* TaxiBookingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxiBookingView.swift; sourceTree = "<group>"; };
+		A2000027 /* TripTaxiBookingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripTaxiBookingView.swift; sourceTree = "<group>"; };
+		A2000028 /* TaxiBookingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxiBookingService.swift; sourceTree = "<group>"; };
+		A2000029 /* TaxiCorpAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxiCorpAPI.swift; sourceTree = "<group>"; };
+		A2000030 /* TaxiCorpAPIReal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxiCorpAPIReal.swift; sourceTree = "<group>"; };
+		A2000031 /* TaxiCorpAPIMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxiCorpAPIMock.swift; sourceTree = "<group>"; };
 		B2000000 /* TPEFlightTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TPEFlightTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B2000001 /* FlightModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightModelTests.swift; sourceTree = "<group>"; };
 		B2000002 /* FlightViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightViewModelTests.swift; sourceTree = "<group>"; };
@@ -130,8 +144,43 @@
 				A2000003 /* FlightModel.swift */,
 				A2000007 /* FlightViewModel.swift */,
 				A3000006 /* Trip */,
+				A3000009 /* Taxi */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		A3000003 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A2000005 /* FlightListView.swift */,
+				A2000006 /* FlightDetailView.swift */,
+				A3000007 /* Trip */,
+				A3000010 /* Taxi */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A3000004 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				A2000009 /* APIConfig.swift */,
+				A2000010 /* AirLabsModels.swift */,
+				A2000011 /* AirportLookup.swift */,
+				A2000012 /* AirlineLookup.swift */,
+				A2000004 /* FlightService.swift */,
+				A3000008 /* Trip */,
+				A3000011 /* Taxi */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A3000005 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A2000000 /* TPEFlightTracker.app */,
+				B2000000 /* TPEFlightTrackerTests.xctest */,
+			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 		A3000006 /* Trip */ = {
@@ -144,16 +193,6 @@
 			path = Trip;
 			sourceTree = "<group>";
 		};
-		A3000003 /* Views */ = {
-			isa = PBXGroup;
-			children = (
-				A2000005 /* FlightListView.swift */,
-				A2000006 /* FlightDetailView.swift */,
-				A3000007 /* Trip */,
-			);
-			path = Views;
-			sourceTree = "<group>";
-		};
 		A3000007 /* Trip */ = {
 			isa = PBXGroup;
 			children = (
@@ -162,21 +201,12 @@
 				A2000020 /* AddDestinationView.swift */,
 				A2000023 /* TripSuggestionsView.swift */,
 				A2000024 /* SuggestionDetailView.swift */,
+				01AD5E3B2F384F3D0066520F /* HotelSearchView.swift */,
+				01AD5E3D2F38504E0066520F /* NotificationService.swift */,
+				01AD5E3F2F3850690066520F /* HotelSearchNearView.swift */,
+				01AD5E412F3851A70066520F /* MapKitExtensions.swift */,
 			);
 			path = Trip;
-			sourceTree = "<group>";
-		};
-		A3000004 /* Services */ = {
-			isa = PBXGroup;
-			children = (
-				A2000009 /* APIConfig.swift */,
-				A2000010 /* AirLabsModels.swift */,
-				A2000011 /* AirportLookup.swift */,
-				A2000012 /* AirlineLookup.swift */,
-				A2000004 /* FlightService.swift */,
-				A3000008 /* Trip */,
-			);
-			path = Services;
 			sourceTree = "<group>";
 		};
 		A3000008 /* Trip */ = {
@@ -189,13 +219,32 @@
 			path = Trip;
 			sourceTree = "<group>";
 		};
-		A3000005 /* Products */ = {
+		A3000009 /* Taxi */ = {
 			isa = PBXGroup;
 			children = (
-				A2000000 /* TPEFlightTracker.app */,
-				B2000000 /* TPEFlightTrackerTests.xctest */,
+				A2000025 /* TaxiModels.swift */,
 			);
-			name = Products;
+			path = Taxi;
+			sourceTree = "<group>";
+		};
+		A3000010 /* Taxi */ = {
+			isa = PBXGroup;
+			children = (
+				A2000026 /* TaxiBookingView.swift */,
+				A2000027 /* TripTaxiBookingView.swift */,
+			);
+			path = Taxi;
+			sourceTree = "<group>";
+		};
+		A3000011 /* Taxi */ = {
+			isa = PBXGroup;
+			children = (
+				A2000028 /* TaxiBookingService.swift */,
+				A2000029 /* TaxiCorpAPI.swift */,
+				A2000030 /* TaxiCorpAPIReal.swift */,
+				A2000031 /* TaxiCorpAPIMock.swift */,
+			);
+			path = Taxi;
 			sourceTree = "<group>";
 		};
 		B3000001 /* TPEFlightTrackerTests */ = {
@@ -220,7 +269,7 @@
 /* Begin PBXNativeTarget section */
 		A4000000 /* TPEFlightTracker */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A6000002;
+			buildConfigurationList = A6000002 /* Build configuration list for PBXNativeTarget "TPEFlightTracker" */;
 			buildPhases = (
 				A5000000 /* Sources */,
 				A5000001 /* Resources */,
@@ -231,23 +280,23 @@
 			);
 			name = TPEFlightTracker;
 			productName = TPEFlightTracker;
-			productReference = A2000000;
+			productReference = A2000000 /* TPEFlightTracker.app */;
 			productType = "com.apple.product-type.application";
 		};
 		B4000000 /* TPEFlightTrackerTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = B6000002;
+			buildConfigurationList = B6000002 /* Build configuration list for PBXNativeTarget "TPEFlightTrackerTests" */;
 			buildPhases = (
 				B5000000 /* Sources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				B7000002,
+				B7000002 /* PBXTargetDependency */,
 			);
 			name = TPEFlightTrackerTests;
 			productName = TPEFlightTrackerTests;
-			productReference = B2000000;
+			productReference = B2000000 /* TPEFlightTrackerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -260,7 +309,7 @@
 				LastSwiftUpdateCheck = 1500;
 				LastUpgradeCheck = 1500;
 			};
-			buildConfigurationList = A6000000;
+			buildConfigurationList = A6000000 /* Build configuration list for PBXProject "TPEFlightTracker" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -269,7 +318,7 @@
 				Base,
 			);
 			mainGroup = A3000000;
-			productRefGroup = A3000005;
+			productRefGroup = A3000005 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -279,34 +328,56 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		A5000001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1000008 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		A5000000 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1000001,
-				A1000002,
-				A1000003,
-				A1000004,
-				A1000005,
-				A1000006,
-				A1000007,
-				A1000009,
-				A1000010,
-				A1000011,
-				A1000012,
-				A1000013,
-				A1000014,
-				A1000015,
-				A1000016,
-				A1000017,
-				A1000018,
-				A1000019,
-				A1000020,
-				A1000021,
-				A1000022,
-				A1000023,
-				A1000024,
+				A1000001 /* TPEFlightTrackerApp.swift in Sources */,
+				A1000002 /* ContentView.swift in Sources */,
+				A1000003 /* FlightModel.swift in Sources */,
+				A1000004 /* FlightService.swift in Sources */,
+				A1000005 /* FlightListView.swift in Sources */,
+				A1000006 /* FlightDetailView.swift in Sources */,
+				01AD5E3C2F384F3D0066520F /* HotelSearchView.swift in Sources */,
+				A1000007 /* FlightViewModel.swift in Sources */,
+				A1000009 /* APIConfig.swift in Sources */,
+				A1000010 /* AirLabsModels.swift in Sources */,
+				01AD5E402F3850690066520F /* HotelSearchNearView.swift in Sources */,
+				A1000011 /* AirportLookup.swift in Sources */,
+				A1000012 /* AirlineLookup.swift in Sources */,
+				01AD5E3E2F38504E0066520F /* NotificationService.swift in Sources */,
+				A1000013 /* MainTabView.swift in Sources */,
+				01AD5E422F3851A70066520F /* MapKitExtensions.swift in Sources */,
+				A1000014 /* TripModels.swift in Sources */,
+				A1000015 /* TripViewModel.swift in Sources */,
+				A1000016 /* DirectionsService.swift in Sources */,
+				A1000017 /* TripService.swift in Sources */,
+				A1000018 /* TripListView.swift in Sources */,
+				A1000019 /* TripDetailView.swift in Sources */,
+				A1000020 /* AddDestinationView.swift in Sources */,
+				A1000021 /* TripSuggestionModels.swift in Sources */,
+				A1000022 /* TripSuggestionService.swift in Sources */,
+				A1000023 /* TripSuggestionsView.swift in Sources */,
+				A1000024 /* SuggestionDetailView.swift in Sources */,
+				A1000025 /* TaxiModels.swift in Sources */,
+				A1000026 /* TaxiBookingView.swift in Sources */,
+				A1000027 /* TripTaxiBookingView.swift in Sources */,
+				A1000028 /* TaxiBookingService.swift in Sources */,
+				A1000029 /* TaxiCorpAPI.swift in Sources */,
+				A1000030 /* TaxiCorpAPIReal.swift in Sources */,
+				A1000031 /* TaxiCorpAPIMock.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -314,31 +385,28 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B1000001,
-				B1000002,
-				B1000003,
-				B1000004,
-				B1000005,
-				B1000006,
-				B1000007,
-				B1000008,
-				B1000009,
-				B1000010,
+				B1000001 /* FlightModelTests.swift in Sources */,
+				B1000002 /* FlightViewModelTests.swift in Sources */,
+				B1000003 /* FlightServiceTests.swift in Sources */,
+				B1000004 /* ViewRenderingTests.swift in Sources */,
+				B1000005 /* TestHelpers.swift in Sources */,
+				B1000006 /* TripModelTests.swift in Sources */,
+				B1000007 /* TripViewModelTests.swift in Sources */,
+				B1000008 /* TripServiceTests.swift in Sources */,
+				B1000009 /* DirectionsServiceTests.swift in Sources */,
+				B1000010 /* TripSuggestionServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXResourcesBuildPhase section */
-		A5000001 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				A1000008,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
+/* Begin PBXTargetDependency section */
+		B7000002 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A4000000 /* TPEFlightTracker */;
+			targetProxy = B7000001 /* PBXContainerItemProxy */;
 		};
-/* End PBXResourcesBuildPhase section */
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		A6000003 /* Debug */ = {
@@ -480,7 +548,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A6000000 /* Build configuration list for PBXProject */ = {
+		A6000000 /* Build configuration list for PBXProject "TPEFlightTracker" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A6000003 /* Debug */,
@@ -489,7 +557,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A6000002 /* Build configuration list for PBXNativeTarget */ = {
+		A6000002 /* Build configuration list for PBXNativeTarget "TPEFlightTracker" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A6000005 /* Debug */,
@@ -498,7 +566,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		B6000002 /* Build configuration list for TPEFlightTrackerTests */ = {
+		B6000002 /* Build configuration list for PBXNativeTarget "TPEFlightTrackerTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				B6000005 /* Debug */,
@@ -508,7 +576,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = A4000001 /* Project object */;
 }

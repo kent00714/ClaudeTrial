@@ -1,5 +1,6 @@
 import Foundation
 import CoreLocation
+import Combine
 
 // MARK: - Taxi Booking Service Protocol
 
