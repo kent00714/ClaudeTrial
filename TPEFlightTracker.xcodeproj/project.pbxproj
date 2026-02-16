@@ -43,6 +43,7 @@
 		A1000029 /* TaxiCorpAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000029 /* TaxiCorpAPI.swift */; };
 		A1000030 /* TaxiCorpAPIReal.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000030 /* TaxiCorpAPIReal.swift */; };
 		A1000031 /* TaxiCorpAPIMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000031 /* TaxiCorpAPIMock.swift */; };
+		A1000032 /* HotelSearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000032 /* HotelSearchService.swift */; };
 		B1000001 /* FlightModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001 /* FlightModelTests.swift */; };
 		B1000002 /* FlightViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002 /* FlightViewModelTests.swift */; };
 		B1000003 /* FlightServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000003 /* FlightServiceTests.swift */; };
@@ -53,6 +54,7 @@
 		B1000008 /* TripServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000008 /* TripServiceTests.swift */; };
 		B1000009 /* DirectionsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000009 /* DirectionsServiceTests.swift */; };
 		B1000010 /* TripSuggestionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000010 /* TripSuggestionServiceTests.swift */; };
+		B1000011 /* HotelSearchServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000011 /* HotelSearchServiceTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -104,6 +106,7 @@
 		A2000029 /* TaxiCorpAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxiCorpAPI.swift; sourceTree = "<group>"; };
 		A2000030 /* TaxiCorpAPIReal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxiCorpAPIReal.swift; sourceTree = "<group>"; };
 		A2000031 /* TaxiCorpAPIMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxiCorpAPIMock.swift; sourceTree = "<group>"; };
+		A2000032 /* HotelSearchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotelSearchService.swift; sourceTree = "<group>"; };
 		B2000000 /* TPEFlightTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TPEFlightTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B2000001 /* FlightModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightModelTests.swift; sourceTree = "<group>"; };
 		B2000002 /* FlightViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlightViewModelTests.swift; sourceTree = "<group>"; };
@@ -115,6 +118,7 @@
 		B2000008 /* TripServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripServiceTests.swift; sourceTree = "<group>"; };
 		B2000009 /* DirectionsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectionsServiceTests.swift; sourceTree = "<group>"; };
 		B2000010 /* TripSuggestionServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripSuggestionServiceTests.swift; sourceTree = "<group>"; };
+		B2000011 /* HotelSearchServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotelSearchServiceTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -172,6 +176,7 @@
 				A2000011 /* AirportLookup.swift */,
 				A2000012 /* AirlineLookup.swift */,
 				A2000004 /* FlightService.swift */,
+				A3000012 /* Hotel */,
 				A3000008 /* Trip */,
 				A3000011 /* Taxi */,
 			);
@@ -251,6 +256,14 @@
 			path = Taxi;
 			sourceTree = "<group>";
 		};
+		A3000012 /* Hotel */ = {
+			isa = PBXGroup;
+			children = (
+				A2000032 /* HotelSearchService.swift */,
+			);
+			path = Hotel;
+			sourceTree = "<group>";
+		};
 		B3000001 /* TPEFlightTrackerTests */ = {
 			isa = PBXGroup;
 			children = (
@@ -264,6 +277,7 @@
 				B2000008 /* TripServiceTests.swift */,
 				B2000009 /* DirectionsServiceTests.swift */,
 				B2000010 /* TripSuggestionServiceTests.swift */,
+				B2000011 /* HotelSearchServiceTests.swift */,
 			);
 			path = TPEFlightTrackerTests;
 			sourceTree = "<group>";
@@ -396,6 +410,7 @@
 				A1000029 /* TaxiCorpAPI.swift in Sources */,
 				A1000030 /* TaxiCorpAPIReal.swift in Sources */,
 				A1000031 /* TaxiCorpAPIMock.swift in Sources */,
+				A1000032 /* HotelSearchService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -413,6 +428,7 @@
 				B1000008 /* TripServiceTests.swift in Sources */,
 				B1000009 /* DirectionsServiceTests.swift in Sources */,
 				B1000010 /* TripSuggestionServiceTests.swift in Sources */,
+				B1000011 /* HotelSearchServiceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,1 +1,59 @@
-/* English strings intentionally use source text as fallback keys. */
+"Hotels" = "Hotels";
+"Search area or hotel name" = "Search area or hotel name";
+"Popular Areas" = "Popular Areas";
+"No Hotels Found" = "No Hotels Found";
+"Try searching for a different area" = "Try searching for a different area";
+"Tap to compare prices" = "Tap to compare prices";
+"Hotel Details" = "Hotel Details";
+"Location" = "Location";
+"Amenities" = "Amenities";
+"Book Now" = "Book Now";
+"Compare prices and book on these sites:" = "Compare prices and book on these sites:";
+"reviews" = "reviews";
+"Done" = "Done";
+
+"Taipei" = "Taipei";
+"Jiufen" = "Jiufen";
+"Beitou" = "Beitou";
+"Taroko" = "Taroko";
+"Sun Moon Lake" = "Sun Moon Lake";
+"Kaohsiung" = "Kaohsiung";
+"Tainan" = "Tainan";
+
+"Xinyi District" = "Xinyi District";
+"Zhongshan District" = "Zhongshan District";
+"Taipei Main Station" = "Taipei Main Station";
+"Beimen" = "Beimen";
+"Raohe Night Market" = "Raohe Night Market";
+"Songshan Cultural Park" = "Songshan Cultural Park";
+"Ximending" = "Ximending";
+"Beitou Hot Springs" = "Beitou Hot Springs";
+"Jiufen Old Street" = "Jiufen Old Street";
+"Nantou" = "Nantou";
+"Hualien" = "Hualien";
+"Yancheng District" = "Yancheng District";
+"Lingya District" = "Lingya District";
+"West Central District" = "West Central District";
+
+"Pool" = "Pool";
+"Spa" = "Spa";
+"Gym" = "Gym";
+"Restaurant" = "Restaurant";
+"Bar" = "Bar";
+"WiFi" = "WiFi";
+"Hot Spring" = "Hot Spring";
+"Mountain View" = "Mountain View";
+"Lake View" = "Lake View";
+"Laundry" = "Laundry";
+"Cultural Experience" = "Cultural Experience";
+
+"Excellent" = "Excellent";
+"Very Good" = "Very Good";
+"Good" = "Good";
+"Fair" = "Fair";
+
+"View on Google Maps" = "View on Google Maps";
+"Search on Booking.com" = "Search on Booking.com";
+"Search on Agoda" = "Search on Agoda";
+"Search on Expedia" = "Search on Expedia";
+"Search on Trip.com" = "Search on Trip.com";

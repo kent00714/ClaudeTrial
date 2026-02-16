@@ -1,5 +1,6 @@
 import XCTest
 import SwiftUI
+import CoreLocation
 @testable import TPEFlightTracker
 
 /// Tests that verify SwiftUI views can be instantiated and their
@@ -138,5 +139,61 @@ final class ViewRenderingTests: XCTestCase {
 
         let view = FlightListView(viewModel: vm)
         XCTAssertNotNil(view)
+    }
+
+    // MARK: - Hotel Views
+
+    func testHotelSearchViewCanBeInstantiated() {
+        let view = HotelSearchView(service: MockHotelSearchService())
+        XCTAssertNotNil(view)
+    }
+
+    func testHotelCardCanBeInstantiated() {
+        let view = HotelCard(result: sampleHotelResult)
+        XCTAssertNotNil(view)
+    }
+
+    func testHotelDetailSheetCanBeInstantiated() {
+        let view = HotelDetailSheet(result: sampleHotelResult)
+        XCTAssertNotNil(view)
+    }
+
+    private var sampleHotelResult: HotelSearchResult {
+        let hotel = Hotel(
+            id: "test_hotel",
+            name: "Test Hotel",
+            nameLocal: "測試飯店",
+            area: "Taipei",
+            neighborhood: "Xinyi District",
+            address: "No. 1 Test Road",
+            latitude: 25.0330,
+            longitude: 121.5654,
+            rating: 4.5,
+            reviewCount: 1000,
+            starRating: 5,
+            priceLevel: 3,
+            amenities: ["WiFi", "Gym", "Restaurant"]
+        )
+
+        return HotelSearchResult(
+            id: hotel.id,
+            hotel: hotel,
+            distanceKm: 1.2,
+            bookingLinks: HotelSearchService.shared.generateBookingLinks(for: hotel)
+        )
+    }
+}
+
+private final class MockHotelSearchService: HotelSearchServiceProtocol {
+    func searchHotels(near coordinate: CLLocationCoordinate2D, radiusKm: Double, sortBy: HotelSortOption) -> [HotelSearchResult] {
+        []
+    }
+
+    func searchHotels(in area: String, sortBy: HotelSortOption) -> [HotelSearchResult] {
+        []
+    }
+
+    func generateBookingLinks(for hotel: Hotel) -> [BookingLink] {
+        []
     }
 }

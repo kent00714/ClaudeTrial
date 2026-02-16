@@ -3,7 +3,22 @@ import CoreLocation
 
 // MARK: - Hotel Search Service
 
-class HotelSearchService {
+protocol HotelSearchServiceProtocol {
+    func searchHotels(
+        near coordinate: CLLocationCoordinate2D,
+        radiusKm: Double,
+        sortBy: HotelSortOption
+    ) -> [HotelSearchResult]
+
+    func searchHotels(
+        in area: String,
+        sortBy: HotelSortOption
+    ) -> [HotelSearchResult]
+
+    func generateBookingLinks(for hotel: Hotel) -> [BookingLink]
+}
+
+class HotelSearchService: HotelSearchServiceProtocol {
 
     static let shared = HotelSearchService()
 
@@ -52,6 +67,7 @@ class HotelSearchService {
             .filter { hotel in
                 hotel.area.lowercased().contains(lowercased) ||
                 hotel.name.lowercased().contains(lowercased) ||
+                hotel.nameLocal.lowercased().contains(lowercased) ||
                 hotel.neighborhood.lowercased().contains(lowercased)
             }
             .map { hotel -> HotelSearchResult in

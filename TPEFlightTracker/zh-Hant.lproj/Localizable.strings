@@ -346,3 +346,52 @@
 "multi-trip" = "多路線整合";
 "combined" = "整合";
 "weekend" = "週末";
+"Location" = "位置";
+"Tap to compare prices" = "點一下以比較價格";
+"reviews" = "則評論";
+
+"Taipei" = "台北";
+"Jiufen" = "九份";
+"Beitou" = "北投";
+"Taroko" = "太魯閣";
+"Sun Moon Lake" = "日月潭";
+"Kaohsiung" = "高雄";
+"Tainan" = "台南";
+
+"Beimen" = "北門";
+"Beitou Hot Springs" = "北投溫泉";
+"Hualien" = "花蓮";
+"Jiufen Old Street" = "九份老街";
+"Lingya District" = "苓雅區";
+"Nantou" = "南投";
+"Raohe Night Market" = "饒河夜市";
+"Songshan Cultural Park" = "松山文創園區";
+"Taipei Main Station" = "台北車站";
+"West Central District" = "中西區";
+"Ximending" = "西門町";
+"Xinyi District" = "信義區";
+"Yancheng District" = "鹽埕區";
+"Zhongshan District" = "中山區";
+
+"Bar" = "酒吧";
+"Cultural Experience" = "文化體驗";
+"Gym" = "健身房";
+"Hot Spring" = "溫泉";
+"Lake View" = "湖景";
+"Laundry" = "洗衣服務";
+"Mountain View" = "山景";
+"Pool" = "泳池";
+"Restaurant" = "餐廳";
+"Spa" = "水療";
+"WiFi" = "無線網路";
+
+"Excellent" = "極佳";
+"Very Good" = "很好";
+"Good" = "不錯";
+"Fair" = "普通";
+
+"View on Google Maps" = "在 Google 地圖中查看";
+"Search on Booking.com" = "在 Booking.com 搜尋";
+"Search on Agoda" = "在 Agoda 搜尋";
+"Search on Expedia" = "在 Expedia 搜尋";
+"Search on Trip.com" = "在 Trip.com 搜尋";
