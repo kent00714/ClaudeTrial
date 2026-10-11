@@ -1,0 +1,47 @@
+name: Ticket release monitor
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # GitHub's minimum; runs are often delayed several minutes
+  workflow_dispatch:
+
+concurrency:
+  group: ticket-monitor
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: ticket-monitor
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ticket-monitor/requirements.txt
+      - run: pip install -r requirements.txt
+
+      # State (last-seen availability) is carried between runs through the cache.
+      - uses: actions/cache/restore@v4
+        with:
+          path: ticket-monitor/state
+          key: ticket-state-${{ github.run_id }}
+          restore-keys: ticket-state-
+
+      - name: Check once
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: python -m ticket_monitor --once
+
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: ticket-monitor/state
+          key: ticket-state-${{ github.run_id }}

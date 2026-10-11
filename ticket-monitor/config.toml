@@ -1,0 +1,60 @@
+# 票務釋票監測設定
+# 通知管道的金鑰一律放環境變數（TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID / DISCORD_WEBHOOK_URL / NTFY_TOPIC），不要寫在這裡。
+
+[monitor]
+interval_seconds = 120            # 每輪檢查間隔，最低 30 秒（程式強制）
+jitter_seconds = 30               # 隨機延遲，避免固定頻率打站
+min_host_interval_seconds = 5     # 同一網站兩次請求至少間隔幾秒
+discover_every = 10               # 每幾輪重新搜尋一次新活動（搜尋頁較重）
+state_file = "state/state.json"
+
+# ---- 沒有專屬解析器的售票網站：用關鍵字掃描首頁/列表頁的連結 ----
+# 註：遠大、OPENTIX 等網站以 JavaScript 動態載入，純 HTML 掃描可能抓不到，屬「盡力而為」。
+[[sites]]
+name = "ibon"
+listing_url = "https://ticket.ibon.com.tw/"
+
+[[sites]]
+name = "era"                      # 年代售票
+listing_url = "https://www.ticket.com.tw/"
+
+[[sites]]
+name = "ticketplus"               # 遠大售票
+listing_url = "https://ticketplus.com.tw/"
+
+[[sites]]
+name = "opentix"
+listing_url = "https://www.opentix.life/"
+
+[[sites]]
+name = "udn"                      # udn 售票網
+listing_url = "https://tickets.udnfunlife.com/"
+
+[[sites]]
+name = "famiticket"
+listing_url = "https://www.famiticket.com.tw/"
+
+# ---- 第一個驗證目標：金智媛 2026 亞洲見面會 WONEDERLAND 台北場 ----
+# 根據新聞：2026/11/08（日）18:00，Legacy TERA，拓元售票；原定 9/20 開賣因拓元 FB 登入異常延期。
+[[targets]]
+name = "金智媛 WONEDERLAND 台北"
+keywords = ["金智媛", "KIM JI WON", "KIMJIWON", "김지원", "WONEDERLAND"]
+providers = ["tixcraft", "kktix", "ibon", "era", "ticketplus", "opentix", "udn", "famiticket"]
+check_areas = false               # true = 也抓拓元各區剩餘張數（區域頁可能需要登入）
+
+# 確認拓元活動代碼後可直接釘選（網址 https://tixcraft.com/activity/detail/<代碼>），
+# 就算列表頁下架也會持續監測：
+# [[targets.watch]]
+# provider = "tixcraft"
+# event_id = "26_xxxxxx"
+# title = "金智媛 WONEDERLAND 台北"
+
+# 任意網頁（例如主辦單位公告頁）也能監看，內容一變就通知：
+# [[targets.watch]]
+# provider = "page"
+# url = "https://example.com/announcement"
+# title = "主辦公告頁"
+# notify_on_change = true
+# selector = "main"               # 只比對這個 CSS 區塊，避免廣告輪播誤報
+# sold_out_patterns = ["已售完"]
+# available_patterns = ["立即購買"]

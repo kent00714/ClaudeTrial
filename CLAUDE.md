@@ -126,3 +126,14 @@ All services are injectable for testability.
 - Service layer persistence
 - Mock-based async operations
 - Suggestion service and model tests
+
+## Ticket Release Monitor (`ticket-monitor/`)
+
+Standalone Python 3.11+ tool (separate from the iOS app) that polls Taiwanese ticketing sites
+(tixCraft, KKTIX, plus generic keyword scanning of ibon/年代/遠大/OPENTIX/udn/FamiTicket) and
+alerts on ticket releases (釋票) via console, ntfy, Telegram or Discord. Read-only: no login,
+no auto-purchase. First target: 金智媛 WONEDERLAND Taipei (see `ticket-monitor/config.toml`).
+
+- Run: `cd ticket-monitor && python -m ticket_monitor [--once | --discover-only]`
+- Test: `cd ticket-monitor && python -m unittest discover -s tests -t .`
+- Scheduled run: `.github/workflows/ticket-monitor.yml` (every 5 min, state kept in Actions cache)
