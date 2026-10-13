@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "*/5 * * * *"   # GitHub's minimum; runs are often delayed several minutes
   workflow_dispatch:
+  # Scheduled runs only fire from the default branch; a push here lets the
+  # monitor run (and be verified against the real sites) before merging.
+  push:
+    branches: [claude/ticket-release-monitor]
+    paths: ["ticket-monitor/**", ".github/workflows/ticket-monitor.yml"]
 
 concurrency:
   group: ticket-monitor
@@ -24,6 +29,10 @@ jobs:
           cache: pip
           cache-dependency-path: ticket-monitor/requirements.txt
       - run: pip install -r requirements.txt
+      - name: Unit tests
+        run: python -m unittest discover -s tests -t .
+      - name: Discover events on each site
+        run: python -m ticket_monitor --discover-only -v
 
       # State (last-seen availability) is carried between runs through the cache.
       - uses: actions/cache/restore@v4
